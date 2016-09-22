@@ -17,7 +17,7 @@ func NewAuth(config *Config) (*Auth, error) {
 	a := &Auth{
 		name: path.Join(config.DataPath, "auth.json"),
 	}
-	e, err := LoadJSON(a.name, a)
+	_, err := LoadJSON(a.name, a)
 	if err != nil {
 		return nil, err
 	}

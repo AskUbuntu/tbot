@@ -8,7 +8,6 @@ import (
 // Config maintains the configuration for the application and manages its
 // storage and retrieval from disk (in JSON format).
 type Config struct {
-	name          string
 	Addr          string `json:"addr"`           // Address to listen on
 	RootPath      string `json:"root_path"`      // Path to www directory
 	DataPath      string `json:"data_path"`      // Path to data files
@@ -22,9 +21,7 @@ func LoadConfig(name string) (*Config, error) {
 		return nil, err
 	}
 	defer r.Close()
-	c := &Config{
-		name: name,
-	}
+	c := &Config{}
 	if err := json.NewDecoder(r).Decode(c); err != nil {
 		return nil, err
 	}

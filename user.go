@@ -5,7 +5,6 @@ import (
 
 	"crypto/rand"
 	"encoding/base64"
-	"path"
 	"time"
 )
 
@@ -27,12 +26,12 @@ func (u *User) ResetPassword() (string, error) {
 	if err := u.SetPassword(base64.StdEncoding.EncodeToString(b)); err != nil {
 		return "", err
 	}
-	return
+	return string(b), nil
 }
 
 // SetPassword changes the password set on the account.
 func (u *User) SetPassword(password string) error {
-	h, err = bcrypt.GenerateFromPassword([]byte(password), 0)
+	h, err := bcrypt.GenerateFromPassword([]byte(password), 0)
 	if err != nil {
 		return err
 	}
