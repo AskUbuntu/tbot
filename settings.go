@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"os"
 	"path"
 )
 
@@ -25,36 +23,22 @@ func NewSettings(config *Config) (*Settings, error) {
 	s := &Settings{
 		name: path.Join(config.DataPath, "settings.json"),
 	}
-	r, err := os.Open(s.name)
+	e, err := LoadJSON(s.name, s)
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return nil, err
-		} else {
-			s.PollFrequency = 10
-			s.MinStars = 6
-			s.MatchingWords = []string{}
-			s.QueueFrequency = 180 // 3 hours
-		}
-	} else {
-		defer r.Close()
-		if err := json.NewDecoder(r).Decode(s); err != nil {
-			return nil, err
-		}
+		return nil, err
+	}
+	if !e {
+		s.PollFrequency = 10
+		s.MinStars = 6
+		s.MatchingWords = []string{}
+		s.QueueFrequency = 180 // 3 hours
 	}
 	return s, nil
 }
 
 // Save the settings to disk.
 func (s *Settings) Save() error {
-	w, err := os.Create(s.name)
-	if err != nil {
-		return err
-	}
-	defer w.Close()
-	if err := json.NewEncoder(w).Encode(s); err != nil {
-		return err
-	}
-	return nil
+	return SaveJSON(s.name, s)
 }
 
 // Register adds the channel to a list of ones to be notified when settings are
@@ -64,7 +48,7 @@ func (s *Settings) Register(ch chan<- bool) {
 }
 
 // Notify lets all registered channels know that settings have been changed.
-func (s *Settings) Notify() error {
+func (s *Settings) Notify() {
 	for _, ch := range s.channels {
 		go func() {
 			ch <- true
