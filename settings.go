@@ -11,7 +11,6 @@ import (
 // the application. For the MinStars and MatchingWords members, messages will
 // be selected if *either* one triggers.
 type Settings struct {
-	config         *Config
 	name           string
 	channels       []chan<- bool
 	PollFrequency  int      `json:"poll_frequency"`  // Wait this many minutes between polling attempts
@@ -24,8 +23,7 @@ type Settings struct {
 // the file exists, it is loaded from disk. Otherwise, defaults are used.
 func NewSettings(config *Config) (*Settings, error) {
 	s := &Settings{
-		config: config,
-		name:   path.Join(config.DataPath, "settings.json"),
+		name: path.Join(config.DataPath, "settings.json"),
 	}
 	r, err := os.Open(s.name)
 	if err != nil {
