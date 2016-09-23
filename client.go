@@ -13,9 +13,18 @@ type Client struct {
 
 // run receives messages on the specified channel and tweets them.
 func (c *Client) run(ch <-chan string) {
-	for t := range ch {
-		if _, _, err := c.client.Statuses.Update(t, nil); err != nil {
-			// TODO: some sort of error should be shown
+	for {
+		quit := false
+		select {
+		case t := <-ch:
+			if _, _, err := c.client.Statuses.Update(t, nil); err != nil {
+				// TODO: some sort of error should be shown
+			}
+		case <-c.closeChan:
+			quit = true
+		}
+		if quit {
+			break
 		}
 	}
 	close(c.closeChan)
@@ -50,5 +59,6 @@ func NewClient(config *Config, ch <-chan string) (*Client, error) {
 // Waits for the client to shutdown. The channel passed to NewClient *must* be
 // closed first.
 func (c *Client) Close() {
+	c.closeChan <- true
 	<-c.closeChan
 }
