@@ -4,15 +4,20 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hectane/go-asyncserver"
 
+	"html/template"
 	"net/http"
+	"path"
 )
 
 // Server acts as a front end to the application.
 type Server struct {
-	server   *server.AsyncServer
-	mux      *mux.Router
-	settings *Settings
-	auth     *Auth
+	server           *server.AsyncServer
+	mux              *mux.Router
+	settings         *Settings
+	auth             *Auth
+	queueTemplate    *template.Template
+	settingsTemplate *template.Template
+	usersTemplate    *template.Template
 }
 
 // indexHandler redirects the client to the queue tab.
@@ -22,6 +27,9 @@ func (s *Server) indexHandler(w http.ResponseWriter, r *http.Request) {
 
 // queueHandler manages the queuing of items and custom tweets.
 func (s *Server) queueHandler(w http.ResponseWriter, r *http.Request) {
+	s.queueTemplate.Execute(w, map[string]interface{}{
+	//...
+	})
 }
 
 // settingsHandler manages access to settings that control tweets.
@@ -39,6 +47,15 @@ func NewServer(config *Config, settings *Settings, auth *Auth) (*Server, error) 
 		mux:      mux.NewRouter(),
 		settings: settings,
 		auth:     auth,
+		queueTemplate: template.Must(
+			template.New(path.Join(config.RootPath, "queue.tpl")).Parse("html"),
+		),
+		settingsTemplate: template.Must(
+			template.New(path.Join(config.RootPath, "settings.tpl")).Parse("html"),
+		),
+		usersTemplate: template.Must(
+			template.New(path.Join(config.RootPath, "users.tpl")).Parse("html"),
+		),
 	}
 	s.server.Handler = s
 	s.mux.HandleFunc("/", s.indexHandler)

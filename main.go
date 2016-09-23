@@ -64,6 +64,8 @@ func main() {
 	}
 	defer server.Close()
 
+	log.Println("Application is running")
+
 	// Wait for SIGINT to be sent
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT)
