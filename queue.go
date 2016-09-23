@@ -42,19 +42,24 @@ func (q *Queue) run() {
 			continue
 		}
 		var (
-			timer = time.NewTimer(diff)
-			quit  = false
+			timer     *time.Timer
+			timerChan <-chan time.Time
+			quit      = false
 		)
+		if diff > 0 {
+			timer = time.NewTimer(diff)
+			timerChan = timer.C
+		}
 		select {
 		case t := <-q.tweetInChan:
 			q.QueuedTweets = append(q.QueuedTweets, t)
 			q.Save()
-		case <-timer.C:
+		case <-timerChan:
 		case <-q.notifyChan:
 		case <-q.closeChan:
 			quit = true
 		}
-		if !timer.Stop() {
+		if timer != nil && !timer.Stop() {
 			<-timer.C
 		}
 		if quit {
