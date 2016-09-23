@@ -56,6 +56,14 @@ func main() {
 	}
 	defer client.Close()
 
+	// Finally, create the server that will listen for requests
+	log.Print("Initializing server...\n")
+	server, err := NewServer(config, settings, auth)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer server.Close()
+
 	// Wait for SIGINT to be sent
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT)
