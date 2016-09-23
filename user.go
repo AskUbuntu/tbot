@@ -8,11 +8,17 @@ import (
 	"time"
 )
 
+const (
+	StandardUser = "standard"
+	StaffUser    = "staff"
+	AdminUser    = "admin"
+)
+
 // User represents information for a registered user.
 type User struct {
 	PasswordHash   []byte    `json:"password_hash"`
 	ChangePassword bool      `json:"change_password"`
-	IsStaff        bool      `json:"is_staff"`
+	Type           string    `json:"type"`
 	Created        time.Time `json:"created"`
 }
 
