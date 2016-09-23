@@ -1,0 +1,10 @@
+{
+    "addr":                    "127.0.0.1:8000",
+    "root_path":               "www",
+    "data_path":               "data",
+    "admin_password":          "password",
+    "twitter_consumer_key":    "",
+    "twitter_consumer_secret": "",
+    "twitter_access_token":    "",
+    "twitter_access_secret":   ""
+}
