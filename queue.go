@@ -12,12 +12,13 @@ import (
 type Queue struct {
 	settings     *Settings
 	name         string
-	notifyChan   chan bool   // Settings changed
-	tweetInChan  chan string // Tweet added to queue
-	closeChan    chan bool   // Shutdown the queue
-	LastTweet    time.Time   `json:"last_tweet"` // Time of last tweet
-	QueuedTweets []string    `json:"tweets"`     // List of tweets in queue
-	Tweet        chan string `json:"-"`          // Tweet to be sent
+	notifyChan   chan bool     // Settings changed
+	tweetInChan  chan string   // Tweet added to queue
+	tweetOutChan chan string   // Tweet sent
+	closeChan    chan bool     // Shutdown the queue
+	LastTweet    time.Time     `json:"last_tweet"` // Time of last tweet
+	QueuedTweets []string      `json:"tweets"`     // List of tweets in queue
+	Tweet        <-chan string `json:"-"`          // Tweet to be sent
 }
 
 // run queues messages waiting to be tweeted and dispatches them when ready.
@@ -34,7 +35,7 @@ func (q *Queue) run() {
 			).Sub(n)
 		)
 		if diff <= 0 && len(q.QueuedTweets) > 0 {
-			q.Tweet <- q.QueuedTweets[0]
+			q.tweetOutChan <- q.QueuedTweets[0]
 			q.LastTweet = n
 			q.QueuedTweets = append(q.QueuedTweets[1:])
 			q.Save()
@@ -60,20 +61,21 @@ func (q *Queue) run() {
 			break
 		}
 	}
-	q.closeChan <- true
+	close(q.closeChan)
 }
 
 // NewQueue creates a new queue, loading existing data from disk if available.
 // The queue also launches a goroutine to manage tweets.
 func NewQueue(config *Config, settings *Settings) (*Queue, error) {
 	q := &Queue{
-		settings:    settings,
-		name:        path.Join(config.DataPath, "queue.json"),
-		notifyChan:  make(chan bool),
-		tweetInChan: make(chan string),
-		closeChan:   make(chan bool),
-		Tweet:       make(chan string),
+		settings:     settings,
+		name:         path.Join(config.DataPath, "queue.json"),
+		notifyChan:   make(chan bool),
+		tweetInChan:  make(chan string),
+		tweetOutChan: make(chan string),
+		closeChan:    make(chan bool),
 	}
+	q.Tweet = q.tweetOutChan
 	_, err := LoadJSON(q.name, q)
 	if err != nil {
 		return nil, err

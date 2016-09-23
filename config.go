@@ -8,10 +8,14 @@ import (
 // Config maintains the configuration for the application and manages its
 // storage and retrieval from disk (in JSON format).
 type Config struct {
-	Addr          string `json:"addr"`           // Address to listen on
-	RootPath      string `json:"root_path"`      // Path to www directory
-	DataPath      string `json:"data_path"`      // Path to data files
-	AdminPassword string `json:"admin_password"` // Password for admin user
+	Addr                  string `json:"addr"`           // Address to listen on
+	RootPath              string `json:"root_path"`      // Path to www directory
+	DataPath              string `json:"data_path"`      // Path to data files
+	AdminPassword         string `json:"admin_password"` // Password for admin user
+	TwitterConsumerKey    string `json:"twitter_consumer_key"`
+	TwitterConsumerSecret string `json:"twitter_consumer_secret"`
+	TwitterAccessToken    string `json:"twitter_access_token"`
+	TwitterAccessSecret   string `json:"twitter_access_secret"`
 }
 
 // LoadConfig loads configuration from disk.
