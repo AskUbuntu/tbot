@@ -29,5 +29,8 @@ func LoadConfig(name string) (*Config, error) {
 	if err := json.NewDecoder(r).Decode(c); err != nil {
 		return nil, err
 	}
+	if err := os.MkdirAll(c.DataPath, 0700); err != nil {
+		return nil, err
+	}
 	return c, nil
 }
