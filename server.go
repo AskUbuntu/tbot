@@ -15,6 +15,7 @@ type Server struct {
 	mux              *mux.Router
 	settings         *Settings
 	auth             *Auth
+	queue            *Queue
 	queueTemplate    *template.Template
 	settingsTemplate *template.Template
 	usersTemplate    *template.Template
@@ -30,7 +31,8 @@ func (s *Server) queueHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	s.queueTemplate.Execute(w, map[string]interface{}{
-	//...
+		"messages": []string{},
+		"tweets":   s.queue.QueuedTweets,
 	})
 }
 
@@ -43,12 +45,13 @@ func (s *Server) usersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewServer creates a new server bound to the address specified in the config.
-func NewServer(config *Config, settings *Settings, auth *Auth) (*Server, error) {
+func NewServer(config *Config, settings *Settings, auth *Auth, queue *Queue) (*Server, error) {
 	s := &Server{
 		server:   server.New(config.Addr),
 		mux:      mux.NewRouter(),
 		settings: settings,
 		auth:     auth,
+		queue:    queue,
 		queueTemplate: template.Must(template.ParseFiles(
 			path.Join(config.RootPath, "base.tmpl"),
 			path.Join(config.RootPath, "queue.tmpl"),

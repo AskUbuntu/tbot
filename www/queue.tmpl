@@ -1,7 +1,77 @@
-{{ define "title" }}
+{{define "title"}}
     <title>Queue</title>
-{{ end }}
+{{end}}
 
-{{ define "content" }}
-    Test!
-{{ end }}
+{{define "content"}}
+    <h3>Matching Tweets</h3>
+    <p class="text-muted">
+        Messages that match the chosen criteria are shown below. Use the buttons to the right of the message to determine its fate.
+    </p>
+    <br>
+    <table class="table table-striped table-outline table-condensed">
+        <tr>
+            <th>Message</th>
+            <th></th>
+        </tr>
+        {{range $i, $message := .messages}}
+            <tr>
+                <td>
+                    <strong>&ldquo;</strong>
+                    {{$message}}
+                    <strong>&rdquo;</strong>
+                </td>
+                <td class="text-right">
+                    <a href="#" class="btn btn-primary btn-xs">Queue</a>
+                    <a href="#" class="btn btn-danger btn-xs">Delete</a>
+                </td>
+            </tr>
+        {{else}}
+            <tr>
+                <td colspan="2">
+                    <div class="text-muted text-center small">Empty</div>
+                </td>
+            </tr>
+        {{end}}
+    </table>
+    <br>
+    <h3>Queued Tweets</h3>
+    <p class="text-muted">
+        Messages that are queued to be tweeted are shown below. Order shown below is identical to the order they will be tweeted in.
+    </p>
+    <br>
+    <table class="table table-striped table-outline table-condensed">
+        <tr>
+            <th>Tweet</th>
+            <th></th>
+        </tr>
+        {{range $tweet := .tweets}}
+            <tr>
+                <td>
+                    <strong>&ldquo;</strong>
+                    {{$tweet}}
+                    <strong>&rdquo;</strong>
+                </td>
+                <td class="text-right">
+                    <a href="#" class="btn btn-primary btn-xs">Tweet Now</a>
+                    <a href="#" class="btn btn-danger btn-xs">Delete</a>
+                </td>
+            </tr>
+        {{else}}
+            <tr>
+                <td colspan="2">
+                    <div class="text-muted text-center small">Empty</div>
+                </td>
+            </tr>
+        {{end}}
+    </table>
+    <br>
+    <h3>Custom Tweet</h3>
+    <p class="text-muted">
+        Use the form below to tweet a custom message. Keep in mind that tweets are limited to 140 characters (excluding links).
+    </p>
+    <div class="form-group">
+        <label for="message">Message</label>
+        <textarea class="form-control" placeholder="Message" rows="4"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+{{end}}

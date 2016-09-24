@@ -58,7 +58,7 @@ func main() {
 
 	// Finally, create the server that will listen for requests
 	log.Print("Initializing server...\n")
-	server, err := NewServer(config, settings, auth)
+	server, err := NewServer(config, settings, auth, queue)
 	if err != nil {
 		log.Fatal(err)
 	}
