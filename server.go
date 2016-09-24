@@ -27,6 +27,8 @@ func (s *Server) indexHandler(w http.ResponseWriter, r *http.Request) {
 
 // queueHandler manages the queuing of items and custom tweets.
 func (s *Server) queueHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
 	s.queueTemplate.Execute(w, map[string]interface{}{
 	//...
 	})
@@ -47,21 +49,25 @@ func NewServer(config *Config, settings *Settings, auth *Auth) (*Server, error) 
 		mux:      mux.NewRouter(),
 		settings: settings,
 		auth:     auth,
-		queueTemplate: template.Must(
-			template.New(path.Join(config.RootPath, "queue.tpl")).Parse("html"),
-		),
-		settingsTemplate: template.Must(
-			template.New(path.Join(config.RootPath, "settings.tpl")).Parse("html"),
-		),
-		usersTemplate: template.Must(
-			template.New(path.Join(config.RootPath, "users.tpl")).Parse("html"),
-		),
+		queueTemplate: template.Must(template.ParseFiles(
+			path.Join(config.RootPath, "base.tmpl"),
+			path.Join(config.RootPath, "queue.tmpl"),
+		)),
+		settingsTemplate: template.Must(template.ParseFiles(
+			path.Join(config.RootPath, "base.tmpl"),
+			path.Join(config.RootPath, "settings.tmpl"),
+		)),
+		usersTemplate: template.Must(template.ParseFiles(
+			path.Join(config.RootPath, "base.tmpl"),
+			path.Join(config.RootPath, "users.tmpl"),
+		)),
 	}
 	s.server.Handler = s
 	s.mux.HandleFunc("/", s.indexHandler)
 	s.mux.HandleFunc("/queue", s.queueHandler)
 	s.mux.HandleFunc("/settings", s.settingsHandler)
 	s.mux.HandleFunc("/users", s.usersHandler)
+	s.mux.PathPrefix("/").Handler(http.FileServer(http.Dir(config.RootPath)))
 	if err := s.server.Start(); err != nil {
 		return nil, err
 	}
