@@ -4,6 +4,7 @@ import (
 	"github.com/AskUbuntu/tbot/config"
 	"github.com/PuerkitoBio/goquery"
 
+	"errors"
 	"fmt"
 	"path"
 	"strconv"
@@ -189,18 +190,39 @@ func NewScraper(c *config.Config) (*Scraper, error) {
 	return s, nil
 }
 
+// Messages retrieves the current list of matching messages.
 func (s *Scraper) Messages() []*Message {
-	//...
-	return nil
+	s.data.Lock()
+	defer s.data.Unlock()
+	return s.data.Messages
 }
 
-func (s *Scraper) Use(id int) error {
-	//...
-	return nil
+// Use removes the message from the list in preparation for use. This will also
+// cause the message to be ignored in future scrapes.
+func (s *Scraper) Use(id int) (*Message, error) {
+	s.data.Lock()
+	defer s.data.Unlock()
+	var message *Message
+	for i := len(s.data.Messages) - 1; i >= 0; i-- {
+		m := s.data.Messages[i]
+		if m.ID == id {
+			message = m
+			s.data.Messages = append(
+				s.data.Messages[:i],
+				s.data.Messages[i+1:]...,
+			)
+		}
+	}
+	if message == nil {
+		return nil, errors.New("Invalid message index")
+	}
+	s.data.MessagesUsed = append(s.data.MessagesUsed, message.ID)
+	s.data.save()
+	return message, nil
 }
 
-// GetSettings retrieves the current settings for the scraper.
-func (s *Scraper) GetSettings() Settings {
+// Settings retrieves the current settings for the scraper.
+func (s *Scraper) Settings() Settings {
 	s.settings.Lock()
 	defer s.settings.Unlock()
 	return s.settings.Settings
