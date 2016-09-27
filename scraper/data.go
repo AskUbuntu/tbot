@@ -16,11 +16,11 @@ type data struct {
 	MessagesUsed []int      `json:"messages_used"` // Messages used from last period
 }
 
-func (s data) load() error {
-	_, err := util.LoadJSON(s.name, s)
+func (d *data) load() error {
+	_, err := util.LoadJSON(d.name, d)
 	return err
 }
 
-func (s *data) save() error {
-	return util.SaveJSON(s.name, s)
+func (d *data) save() error {
+	return util.SaveJSON(d.name, d)
 }

@@ -1,6 +1,7 @@
-package main
+package server
 
 import (
+	"github.com/AskUbuntu/tbot/auth"
 	"github.com/gorilla/mux"
 	"github.com/hectane/go-asyncserver"
 
@@ -13,8 +14,7 @@ import (
 type Server struct {
 	server           *server.AsyncServer
 	mux              *mux.Router
-	settings         *Settings
-	auth             *Auth
+	auth             *auth.Auth
 	queue            *Queue
 	queueTemplate    *template.Template
 	settingsTemplate *template.Template

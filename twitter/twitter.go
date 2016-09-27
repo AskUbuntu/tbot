@@ -1,6 +1,7 @@
-package main
+package twitter
 
 import (
+	"github.com/AskUbuntu/tbot/config"
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
 )
@@ -32,7 +33,7 @@ func (c *Client) run(ch <-chan string) {
 
 // NewClient creates a new Twitter client. The credentials are checked to
 // ensure that they are valid.
-func NewClient(config *Config, ch <-chan string) (*Client, error) {
+func NewClient(config *config.Config, ch <-chan string) (*Client, error) {
 	twitterConfig := oauth1.NewConfig(
 		config.TwitterConsumerKey,
 		config.TwitterConsumerSecret,

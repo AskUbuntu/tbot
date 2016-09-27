@@ -148,8 +148,8 @@ func (s *Scraper) run() {
 	close(s.closeChan)
 }
 
-// NewScraper creates a new scraper.
-func NewScraper(c *config.Config) (*Scraper, error) {
+// New creates a new scraper.
+func New(c *config.Config) (*Scraper, error) {
 	s := &Scraper{
 		data:      &data{name: path.Join(c.DataPath, "scraper_data.json")},
 		settings:  &settings{name: path.Join(c.DataPath, "scraper_settings.json")},
