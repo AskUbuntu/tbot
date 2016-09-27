@@ -3,10 +3,14 @@ MAINTAINER Nathan Osman <nathan@quickmediasolutions.com>
 
 WORKDIR /opt/tbot
 
-# Copy the binary, data files, and default configuration to the container
+# Add CA certificates to the container
+RUN apk --update add ca-certificates && \
+    update-ca-certificates && \
+    rm -rf /var/cache/apk/*
+
+# Copy the binary and data files to the container
 COPY tbot .
 COPY www/ www/
-COPY config.json.default config.json
 
 # Indicate the command to run
 CMD ./tbot config.json

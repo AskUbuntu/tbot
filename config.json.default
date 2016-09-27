@@ -1,5 +1,5 @@
 {
-    "addr":                    "127.0.0.1:8000",
+    "addr":                    "0.0.0.0:8000",
     "root_path":               "www",
     "data_path":               "data",
     "admin_password":          "password",
