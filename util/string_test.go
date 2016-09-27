@@ -5,13 +5,13 @@ import (
 )
 
 func TestContainsString(t *testing.T) {
-	if ContainsString([]string{"i like eggs"}, "bacon", false) {
+	if ContainsString("i like eggs", []string{"bacon"}, false) {
 		t.Fatal("search string erroneously found")
 	}
-	if ContainsString([]string{"i like Bacon"}, "bacon", true) {
+	if ContainsString("i like Bacon", []string{"bacon"}, true) {
 		t.Fatal("case-sensitive search should have failed")
 	}
-	if !ContainsString([]string{"i like Bacon"}, "bacon", false) {
+	if !ContainsString("i like Bacon", []string{"bacon"}, false) {
 		t.Fatal("case-insensitive search should have succeeded")
 	}
 }

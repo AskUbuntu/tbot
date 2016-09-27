@@ -38,8 +38,8 @@ func (s *Server) queueHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	s.queueTemplate.Execute(w, map[string]interface{}{
-		"messages":       s.scraper.Messages(),
-		"queuedMessages": s.queue.Messages(),
+		"Messages":       s.scraper.Messages(),
+		"QueuedMessages": s.queue.Messages(),
 	})
 }
 
@@ -126,7 +126,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Close shuts down the server.
 func (s *Server) Close() {
 	s.server.Stop()
+	s.queue.Close()
+	close(s.messages)
 	s.twitter.Close()
 	s.scraper.Close()
-	s.queue.Close()
 }

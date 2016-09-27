@@ -58,7 +58,7 @@ func New(config *config.Config, ch <-chan *scraper.Message) (*Twitter, error) {
 	return t, nil
 }
 
-// Waits for the client to shutdown. The channel passed to NewClient *must* be
+// Waits for the client to shutdown. The channel passed to New *must* be
 // closed first.
 func (t *Twitter) Close() {
 	t.closeChan <- true

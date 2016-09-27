@@ -32,7 +32,7 @@ func (s *settings) load() error {
 		s.PollRoomID = 201
 		s.PollFrequency = 60
 		s.MinStars = 4
-		s.MatchingWords = []string{"ಠ_ಠ", "bacon"}
+		s.MatchingWords = []string{"laser", "bacon"}
 	}
 	return nil
 }

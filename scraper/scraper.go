@@ -7,7 +7,9 @@ import (
 
 	"errors"
 	"fmt"
+	"log"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -32,7 +34,7 @@ func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messag
 		matchingWords = s.settings.MatchingWords
 	)
 	s.settings.Unlock()
-	document.Each(func(i int, selection *goquery.Selection) {
+	document.Find(".message").Each(func(i int, selection *goquery.Selection) {
 		var (
 			link = selection.Find("a[name]")
 			id   = util.Atoi(link.AttrOr("name", ""))
@@ -44,15 +46,17 @@ func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messag
 			earliestID = id
 		}
 		var (
-			body  = selection.Find(".content").Text()
+			body  = strings.TrimSpace(selection.Find(".content").Text())
 			stars = util.Atoi(selection.Find(".stars .times").Text())
 		)
-		if util.ContainsString(matchingWords, body, false) || stars >= minStars {
+		if body != "" &&
+			(util.ContainsString(body, matchingWords, false) ||
+				stars >= minStars) {
 			m := &Message{
 				ID:     id,
 				URL:    fmt.Sprintf("%s%s", pollURL, link.AttrOr("href", "")),
 				Body:   body,
-				Author: selection.Parent().Find(".signature .username").Text(),
+				Author: selection.Parent().Parent().Find(".signature .username").Text(),
 				Stars:  stars,
 			}
 			messages = append(messages, m)
@@ -80,6 +84,7 @@ func (s *Scraper) scrape() error {
 		messages   = []*Message{}
 	)
 	for path != "" {
+		log.Printf("Scraping '%s'...\n", path)
 		document, err = goquery.NewDocument(
 			fmt.Sprintf("%s%s", pollURL, path),
 		)
@@ -91,9 +96,9 @@ func (s *Scraper) scrape() error {
 			earliestID = newEarliestID
 		}
 		messages = append(messages, newMessages...)
-		selection := document.Find(".pager .current").NextFiltered("a")
+		selection := document.Find(".pager .current").Next()
 		if selection.Length() == 0 {
-			selection = document.Find("a[rel=prev]").NextFiltered("a")
+			selection = document.Find("a[rel=prev]").NextAllFiltered("a")
 		}
 		path = selection.AttrOr("href", "")
 	}
@@ -138,9 +143,7 @@ func (s *Scraper) run() {
 		case <-s.closeChan:
 			quit = true
 		}
-		if !timer.Stop() {
-			<-timer.C
-		}
+		timer.Stop()
 		if quit {
 			break
 		}

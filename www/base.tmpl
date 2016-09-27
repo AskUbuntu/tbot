@@ -11,8 +11,8 @@
         <link rel="stylesheet" href="/css/custom.css">
     </head>
     <body>
-        <div class="container">
-            <nav class="navbar navbar-default">
+        <nav class="navbar navbar-default navbar-static-top">
+            <div class="container">
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
                         <span class="icon-bar"></span>
@@ -28,14 +28,10 @@
                         <li><a href="/users">Users</a></li>
                     </ul>
                 </div>
-            </nav>
-
-            <div class="row">
-                <div class="col-md-10 col-md-offset-1">
-                    {{template "content" .}}
-                </div>
             </div>
-
+        </nav>
+        <div class="container">
+            {{template "content" .}}
             <hr>
 
             <div class="row">
