@@ -4,10 +4,10 @@ import (
 	"strings"
 )
 
-// ContainsAny searches the provided string to see if it contains *any* of the
+// ContainsString searches the provided string to see if it contains *any* of the
 // provided search terms. The caseSensitive parameter is used to determine if
 // the matches should be case sensitive.
-func ContainsAny(str string, terms []string, caseSensitive bool) bool {
+func ContainsString(terms []string, str string, caseSensitive bool) bool {
 	if !caseSensitive {
 		str = strings.ToLower(str)
 		termsLower := make([]string, len(terms))

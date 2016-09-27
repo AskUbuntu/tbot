@@ -9,3 +9,25 @@ func Atoi(str string) int {
 	v, _ := strconv.Atoi(str)
 	return v
 }
+
+// ContainsInt determines whether the integer slice contains the specified
+// integer.
+func ContainsInt(integers []int, v int) bool {
+	for _, i := range integers {
+		if i == v {
+			return true
+		}
+	}
+	return false
+}
+
+// FilterInt executes the provided function for each integer in the slice and
+// only includes it in the slice returned if the function returns true.
+func FilterInt(integers []int, fn func(int) bool) (newIntegers []int) {
+	for _, i := range integers {
+		if fn(i) {
+			newIntegers = append(newIntegers, i)
+		}
+	}
+	return
+}

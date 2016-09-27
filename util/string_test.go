@@ -4,14 +4,14 @@ import (
 	"testing"
 )
 
-func TestContainsAny(t *testing.T) {
-	if ContainsAny("bacon", []string{"i like eggs"}, false) {
+func TestContainsString(t *testing.T) {
+	if ContainsString([]string{"i like eggs"}, "bacon", false) {
 		t.Fatal("search string erroneously found")
 	}
-	if ContainsAny("bacon", []string{"i like Bacon"}, true) {
+	if ContainsString([]string{"i like Bacon"}, "bacon", true) {
 		t.Fatal("case-sensitive search should have failed")
 	}
-	if !ContainsAny("bacon", []string{"i like Bacon"}, false) {
+	if !ContainsString([]string{"i like Bacon"}, "bacon", false) {
 		t.Fatal("case-insensitive search should have succeeded")
 	}
 }

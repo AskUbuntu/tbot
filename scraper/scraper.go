@@ -2,13 +2,12 @@ package scraper
 
 import (
 	"github.com/AskUbuntu/tbot/config"
+	"github.com/AskUbuntu/tbot/util"
 	"github.com/PuerkitoBio/goquery"
 
 	"errors"
 	"fmt"
 	"path"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -20,11 +19,6 @@ type Scraper struct {
 	data      *data
 	settings  *settings
 	closeChan chan bool
-}
-
-func atoi(str string) int {
-	v, _ := strconv.Atoi(str)
-	return v
 }
 
 func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messages []*Message) {
@@ -41,41 +35,27 @@ func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messag
 	document.Each(func(i int, selection *goquery.Selection) {
 		var (
 			link = selection.Find("a[name]")
-			id   = atoi(link.AttrOr("name", ""))
+			id   = util.Atoi(link.AttrOr("name", ""))
 		)
-		if id == 0 {
+		if id == 0 || util.ContainsInt(messagesUsed, id) {
 			return
 		}
 		if earliestID == 0 {
 			earliestID = id
 		}
 		var (
-			body       = selection.Find(".content").Text()
-			stars      = atoi(selection.Find(".stars .times").Text())
-			foundMatch = false
+			body  = selection.Find(".content").Text()
+			stars = util.Atoi(selection.Find(".stars .times").Text())
 		)
-		for _, w := range matchingWords {
-			if strings.Contains(strings.ToLower(body), strings.ToLower(w)) {
-				foundMatch = true
+		if util.ContainsString(matchingWords, body, false) || stars >= minStars {
+			m := &Message{
+				ID:     id,
+				URL:    fmt.Sprintf("%s%s", pollURL, link.AttrOr("href", "")),
+				Body:   body,
+				Author: selection.Parent().Find(".signature .username").Text(),
+				Stars:  stars,
 			}
-		}
-		if foundMatch || stars >= minStars {
-			messageUsed := false
-			for _, m := range messagesUsed {
-				if m == id {
-					messageUsed = true
-				}
-			}
-			if !messageUsed {
-				m := &Message{
-					ID:     id,
-					URL:    fmt.Sprintf("%s%s", pollURL, link.AttrOr("href", "")),
-					Body:   body,
-					Author: selection.Parent().Find(".signature .username").Text(),
-					Stars:  stars,
-				}
-				messages = append(messages, m)
-			}
+			messages = append(messages, m)
 		}
 	})
 	return
@@ -121,14 +101,9 @@ func (s *Scraper) scrape() error {
 	s.data.LastScrape = time.Now()
 	s.data.EarliestID = earliestID
 	s.data.Messages = messages
-	for i := len(s.data.MessagesUsed) - 1; i >= 0; i-- {
-		if s.data.MessagesUsed[i] < earliestID {
-			s.data.MessagesUsed = append(
-				s.data.MessagesUsed[:i],
-				s.data.MessagesUsed[i+1:]...,
-			)
-		}
-	}
+	s.data.MessagesUsed = util.FilterInt(s.data.MessagesUsed, func(i int) bool {
+		return i >= earliestID
+	})
 	if err := s.data.save(); err != nil {
 		return err
 	}
