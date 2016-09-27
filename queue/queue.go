@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"github.com/AskUbuntu/tbot/config"
 	"github.com/AskUbuntu/tbot/scraper"
 
 	"path"
@@ -19,10 +20,10 @@ type Queue struct {
 func (q *Queue) sendIfAvailable() bool {
 	q.data.Lock()
 	defer q.data.Unlock()
-	if len(q.data.QueuedTweets) > 0 {
-		q.messageOutChan <- q.data.QueuedTweets[0]
+	if len(q.data.QueuedMessages) > 0 {
+		q.messageOutChan <- q.data.QueuedMessages[0]
 		q.data.LastMessage = time.Now()
-		q.data.QueuedTweets = append(q.data.QueuedTweets[1:])
+		q.data.QueuedMessages = append(q.data.QueuedMessages[1:])
 		// TODO: error handling
 		q.data.save()
 		return true
@@ -33,7 +34,7 @@ func (q *Queue) sendIfAvailable() bool {
 func (q *Queue) run() {
 	for {
 		q.data.Lock()
-		lastMessage := q.data.lastMessage
+		lastMessage := q.data.LastMessage
 		q.data.Unlock()
 		q.settings.Lock()
 		queueFrequency := q.settings.QueueFrequency
@@ -56,14 +57,13 @@ func (q *Queue) run() {
 			timerChan = timer.C
 		}
 		select {
-		case t := <-q.tweetInChan:
+		case t := <-q.messageInChan:
 			q.data.Lock()
-			q.data.QueuedTweets = append(q.data.QueuedTweets, t)
+			q.data.QueuedMessages = append(q.data.QueuedMessages, t)
 			// TODO: error handling
 			q.data.save()
 			q.data.Unlock()
 		case <-timerChan:
-		case <-q.notifyChan:
 		case <-q.closeChan:
 			quit = true
 		}
@@ -79,7 +79,7 @@ func (q *Queue) run() {
 
 // New creates a new queue, loading existing data from disk if available. The
 // queue also launches a goroutine to manage tweets.
-func New(config *Config, inChan <-chan *scraper.Message, outChan chan<- *scraper.Message) (*Queue, error) {
+func New(config *config.Config, inChan <-chan *scraper.Message, outChan chan<- *scraper.Message) (*Queue, error) {
 	q := &Queue{
 		data:           &data{name: path.Join(config.DataPath, "queue_data.json")},
 		settings:       &settings{name: path.Join(config.DataPath, "queue_settings.json")},
@@ -95,6 +95,13 @@ func New(config *Config, inChan <-chan *scraper.Message, outChan chan<- *scraper
 	}
 	go q.run()
 	return q, nil
+}
+
+// Messages retrieves the current list of queued messages.
+func (q *Queue) Messages() []*scraper.Message {
+	q.data.Lock()
+	defer q.data.Unlock()
+	return q.data.QueuedMessages
 }
 
 // Close shuts down the queue and waits for the goroutine to exit.

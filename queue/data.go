@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"github.com/AskUbuntu/tbot/scraper"
 	"github.com/AskUbuntu/tbot/util"
 
 	"sync"
@@ -9,9 +10,9 @@ import (
 
 type data struct {
 	sync.Mutex
-	name         string
-	LastMessage  time.Time `json:"last_message"` // Time of last message
-	QueuedTweets []string  `json:"tweets"`       // List of tweets in queue
+	name           string
+	LastMessage    time.Time          `json:"last_message"`    // Time of last message
+	QueuedMessages []*scraper.Message `json:"queued_messages"` // List of messages in queue
 }
 
 func (d *data) load() error {

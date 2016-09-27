@@ -19,7 +19,7 @@ type Auth struct {
 
 // New creates a new authenticator for registered users. A special entry is
 // created for the admin user.
-func New(config *Config) (*Auth, error) {
+func New(config *config.Config) (*Auth, error) {
 	a := &Auth{
 		data: &data{name: path.Join(config.DataPath, "auth_data.json")},
 		adminUser: &User{
@@ -63,9 +63,9 @@ func (a *Auth) CreateUser(username string) (string, error) {
 // Authenticate attempts to authenticate the specified using their username
 // and password. To make things harder for malicious users, there is no
 // distinguishing between invalid usernames and invalid passwords.
-func (a *Auth) Authenticate(username, password string) (User, error) {
+func (a *Auth) Authenticate(username, password string) (*User, error) {
 	if username == "admin" && password == a.adminPassword {
-		return *a.adminUser, nil
+		return a.adminUser, nil
 	}
 	a.data.Lock()
 	defer a.data.Unlock()

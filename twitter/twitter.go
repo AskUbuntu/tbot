@@ -2,38 +2,39 @@ package twitter
 
 import (
 	"github.com/AskUbuntu/tbot/config"
+	"github.com/AskUbuntu/tbot/scraper"
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
 )
 
 // Client sends tweets as soon as they are ready.
-type Client struct {
+type Twitter struct {
 	client    *twitter.Client
 	closeChan chan bool
 }
 
 // run receives messages on the specified channel and tweets them.
-func (c *Client) run(ch <-chan string) {
+func (t *Twitter) run(ch <-chan *scraper.Message) {
 	for {
 		quit := false
 		select {
-		case t := <-ch:
-			if _, _, err := c.client.Statuses.Update(t, nil); err != nil {
+		case m := <-ch:
+			if _, _, err := t.client.Statuses.Update(m.String(), nil); err != nil {
 				// TODO: some sort of error should be shown
 			}
-		case <-c.closeChan:
+		case <-t.closeChan:
 			quit = true
 		}
 		if quit {
 			break
 		}
 	}
-	close(c.closeChan)
+	close(t.closeChan)
 }
 
-// NewClient creates a new Twitter client. The credentials are checked to
-// ensure that they are valid.
-func NewClient(config *config.Config, ch <-chan string) (*Client, error) {
+// New creates a new Twitter client. The credentials are checked to ensure that
+// they are valid.
+func New(config *config.Config, ch <-chan *scraper.Message) (*Twitter, error) {
 	twitterConfig := oauth1.NewConfig(
 		config.TwitterConsumerKey,
 		config.TwitterConsumerSecret,
@@ -43,23 +44,23 @@ func NewClient(config *config.Config, ch <-chan string) (*Client, error) {
 		config.TwitterAccessSecret,
 	)
 	httpClient := twitterConfig.Client(oauth1.NoContext, token)
-	c := &Client{
+	t := &Twitter{
 		client:    twitter.NewClient(httpClient),
 		closeChan: make(chan bool),
 	}
 	params := &twitter.AccountVerifyParams{
 		SkipStatus: twitter.Bool(true),
 	}
-	if _, _, err := c.client.Accounts.VerifyCredentials(params); err != nil {
+	if _, _, err := t.client.Accounts.VerifyCredentials(params); err != nil {
 		return nil, err
 	}
-	go c.run(ch)
-	return c, nil
+	go t.run(ch)
+	return t, nil
 }
 
 // Waits for the client to shutdown. The channel passed to NewClient *must* be
 // closed first.
-func (c *Client) Close() {
-	c.closeChan <- true
-	<-c.closeChan
+func (t *Twitter) Close() {
+	t.closeChan <- true
+	<-t.closeChan
 }

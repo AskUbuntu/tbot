@@ -1,6 +1,9 @@
 package main
 
 import (
+	"github.com/AskUbuntu/tbot/config"
+	"github.com/AskUbuntu/tbot/server"
+
 	"log"
 	"os"
 	"os/signal"
@@ -18,47 +21,16 @@ func main() {
 
 	// Load the configuration from disk
 	log.Printf("Loading '%s'...\n", os.Args[1])
-	config, err := LoadConfig(os.Args[1])
+	config, err := config.Load(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("Data path: '%s'", config.DataPath)
 	log.Printf("Root path: '%s'", config.RootPath)
 
-	// Initialize the user-customizable settings
-	log.Print("Loading settings...\n")
-	settings, err := NewSettings(config)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer settings.Close()
-
-	// Initialize the list of users
-	log.Print("Loading users...\n")
-	auth, err := NewAuth(config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Create and initialize the queue
-	log.Print("Loading queue...\n")
-	queue, err := NewQueue(config, settings)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer queue.Close()
-
-	// Create the Twitter client
-	log.Print("Initializing Twitter client...\n")
-	client, err := NewClient(config, queue.Tweet)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer client.Close()
-
 	// Finally, create the server that will listen for requests
 	log.Print("Initializing server...\n")
-	server, err := NewServer(config, settings, auth, queue)
+	server, err := server.New(config)
 	if err != nil {
 		log.Fatal(err)
 	}

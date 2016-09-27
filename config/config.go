@@ -18,8 +18,8 @@ type Config struct {
 	TwitterAccessSecret   string `json:"twitter_access_secret"`
 }
 
-// LoadConfig loads configuration from disk.
-func LoadConfig(name string) (*Config, error) {
+// Load loads configuration from disk.
+func Load(name string) (*Config, error) {
 	r, err := os.Open(name)
 	if err != nil {
 		return nil, err
