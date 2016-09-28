@@ -28,27 +28,9 @@ type Server struct {
 	usersTemplate    *template.Template
 }
 
-// indexHandler redirects the client to the queue tab.
-func (s *Server) indexHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/queue", http.StatusTemporaryRedirect)
-}
-
-// queueHandler manages the queuing of items and custom tweets.
-func (s *Server) queueHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	s.queueTemplate.Execute(w, map[string]interface{}{
-		"Messages":       s.scraper.Messages(),
-		"QueuedMessages": s.queue.Messages(),
-	})
-}
-
-// settingsHandler manages access to settings that control tweets.
-func (s *Server) settingsHandler(w http.ResponseWriter, r *http.Request) {
-}
-
-// usersHandler manages registered users and their permissions.
-func (s *Server) usersHandler(w http.ResponseWriter, r *http.Request) {
+type message struct {
+	Type string
+	Body string
 }
 
 // New creates a new server bound to the address specified in the config. The

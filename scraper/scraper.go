@@ -199,6 +199,13 @@ func (s *Scraper) Use(id int) (*Message, error) {
 	return message, nil
 }
 
+// Blacklist prevents a message from showing up in the scraper.
+func (s *Scraper) Blacklist(id int) {
+	s.data.Lock()
+	defer s.data.Unlock()
+	s.data.MessagesUsed = append(s.data.MessagesUsed, id)
+}
+
 // Settings retrieves the current settings for the scraper.
 func (s *Scraper) Settings() Settings {
 	s.settings.Lock()

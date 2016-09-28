@@ -5,7 +5,7 @@
 {{define "content"}}
     <h3>Matching Tweets</h3>
     <p class="text-muted">
-        Messages that match the chosen criteria are shown below. Use the buttons to the right of the message to determine its fate.
+        Messages that match the chosen criteria are shown below. Use the "Queue" button to add the message to the queue of tweets. Use the "Delete" button to remove the message from the list of matched messages.
     </p>
     <br>
     <table class="table table-striped table-outline table-condensed">
@@ -15,7 +15,7 @@
             <th>Stars</th>
             <th></th>
         </tr>
-        {{range $message := .Messages}}
+        {{range $message := .ScrapedMessages}}
             <tr>
                 <td>
                     <a href="{{$message.URL}}" target="_blank">
@@ -32,8 +32,11 @@
                     <strong>{{$message.Stars}}</strong>
                 </td>
                 <td class="text-right">
-                    <a href="#" class="btn btn-primary btn-xs">Queue</a>
-                    <a href="#" class="btn btn-danger btn-xs">Delete</a>
+                    <form method="post">
+                        <input type="hidden" name="id" value="{{$message.ID}}">
+                        <button type="submit" name="action" value="queue" class="btn btn-primary btn-xs">Queue</button>
+                        <button type="submit" name="action" value="delete" class="btn btn-danger btn-xs">Delete</button>
+                    </form>
                 </td>
             </tr>
         {{else}}

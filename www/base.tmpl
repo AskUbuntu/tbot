@@ -31,6 +31,10 @@
             </div>
         </nav>
         <div class="container">
+            {{range $m := .Messages}}
+                <div class="alert alert-{{$m.Type}}">{{$m.Body}}</div>
+            {{end}}
+
             {{template "content" .}}
             <hr>
 
