@@ -33,15 +33,16 @@ func (u *User) authenticate(password string) bool {
 // resetPassword generates a password for the user and forces it to be changed
 // immediately after login.
 func (u *User) resetPassword() (string, error) {
-	b := make([]byte, 6)
+	b := make([]byte, 10)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
-	if err := u.setPassword(base64.StdEncoding.EncodeToString(b)); err != nil {
+	password := base64.StdEncoding.EncodeToString(b)
+	if err := u.setPassword(password); err != nil {
 		return "", err
 	}
 	u.ChangePassword = true
-	return string(b), nil
+	return password, nil
 }
 
 // setPassword changes the password set on the account.

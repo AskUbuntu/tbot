@@ -21,7 +21,10 @@ type Auth struct {
 // created for the admin user.
 func New(config *config.Config) (*Auth, error) {
 	a := &Auth{
-		data: &data{name: path.Join(config.DataPath, "auth_data.json")},
+		data: &data{
+			name:  path.Join(config.DataPath, "auth_data.json"),
+			Users: make(map[string]*User),
+		},
 		adminUser: &User{
 			Type: AdminUser,
 		},
