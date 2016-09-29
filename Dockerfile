@@ -1,19 +1,26 @@
-FROM alpine:3.3
+FROM golang:alpine
 MAINTAINER Nathan Osman <nathan@quickmediasolutions.com>
 
-WORKDIR /opt/tbot
+# Git is required
+RUN \
+    apk add --no-cache git && \
+    rm -rf /var/lib/apt/lists/*
 
-# Add CA certificates to the container
-RUN apk --update add ca-certificates && \
-    update-ca-certificates && \
-    rm -rf /var/cache/apk/*
+# Build the application
+RUN go get github.com/AskUbuntu/tbot
 
-# Copy the binary and data files to the container
-COPY tbot .
-COPY www/ www/
+# Copy the files needed during runtime
+COPY www/ /root/www/
 
-# Indicate the command to run
-CMD ./tbot config.json
+# Default values for settings
+ENV \
+    ADDR=0.0.0.0:8000 \
+    ROOT_PATH=/root/www \
+    DATA_PATH=/root/data \
+    ADMIN_PASSWORD=password
+
+# Default command for launching the application
+CMD tbot
 
 # Expose the default port
 EXPOSE 8000
