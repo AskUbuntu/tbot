@@ -6,65 +6,27 @@ import (
 	"github.com/AskUbuntu/tbot/queue"
 	"github.com/AskUbuntu/tbot/scraper"
 	"github.com/AskUbuntu/tbot/twitter"
-	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/hectane/go-asyncserver"
 
 	"encoding/gob"
 	"net/http"
+	"path"
 )
 
 // Server acts as a front end to the application, allowing the entire
 // application to be controlled directly from the web.
 type Server struct {
-	server   *server.AsyncServer
-	mux      *mux.Router
-	sessions *sessions.CookieStore
-	messages chan *scraper.Message
-	auth     *auth.Auth
-	queue    *queue.Queue
-	twitter  *twitter.Twitter
-	scraper  *scraper.Scraper
-}
-
-// message is an extremely simple struct that stores session messages for
-// display.
-type message struct {
-	Type string
-	Body string
-}
-
-// getUser is a utility method for retrieving the user for the request.
-func (s *Server) getUser(r *http.Request) *auth.User {
-	v, ok := context.GetOk(r, "user")
-	if ok {
-		return v.(*auth.User)
-	}
-	return nil
-}
-
-// r is a utility function that prevents users from accessing pages for which
-// they do not have the correct permissions. The first argument is the
-// minimum required permission for accessing the page. The second argument is
-// the handler which will be invoked upon confirmation of authorization.
-func (s *Server) r(userType string, fn http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if u := s.getUser(r); u != nil {
-			if userType == auth.StandardUser ||
-				userType == auth.StaffUser && u.Type != auth.StandardUser ||
-				userType == auth.AdminUser && u.Type == auth.AdminUser {
-				fn(w, r)
-			}
-		}
-		session, _ := s.sessions.Get(r, "auth")
-		session.AddFlash(&message{
-			Type: "danger",
-			Body: "you are not authorized to access this page",
-		})
-		http.Redirect(w, r, "/users/login", http.StatusTemporaryRedirect)
-		return
-	}
+	server       *server.AsyncServer
+	mux          *mux.Router
+	sessions     *sessions.CookieStore
+	templatePath string
+	messages     chan *scraper.Message
+	auth         *auth.Auth
+	queue        *queue.Queue
+	twitter      *twitter.Twitter
+	scraper      *scraper.Scraper
 }
 
 // New creates a new server bound to the address specified in the config. The
@@ -92,14 +54,15 @@ func New(config *config.Config) (*Server, error) {
 		return nil, err
 	}
 	srv := &Server{
-		server:   server.New(config.Addr),
-		mux:      mux.NewRouter(),
-		sessions: sessions.NewCookieStore([]byte(config.SecretKey)),
-		messages: messagesIn,
-		auth:     a,
-		queue:    q,
-		twitter:  t,
-		scraper:  s,
+		server:       server.New(config.Addr),
+		mux:          mux.NewRouter(),
+		sessions:     sessions.NewCookieStore([]byte(config.SecretKey)),
+		templatePath: path.Join(config.RootPath, "templates"),
+		messages:     messagesIn,
+		auth:         a,
+		queue:        q,
+		twitter:      t,
+		scraper:      s,
 	}
 	srv.server.Handler = srv
 	srv.mux.HandleFunc("/", srv.indexHandler)
@@ -119,8 +82,8 @@ func New(config *config.Config) (*Server, error) {
 	srv.mux.HandleFunc("/twitter/custom", srv.r(auth.StandardUser, srv.twitterCustomHandler))
 	srv.mux.HandleFunc("/twitter/delete", srv.r(auth.StandardUser, srv.twitterDeleteHandler))
 	srv.mux.HandleFunc("/settings", srv.r(auth.StaffUser, srv.settingsHandler))
-	srv.mux.PathPrefix("/").Handler(
-		http.FileServer(http.Dir(config.RootPath)),
+	srv.mux.PathPrefix("/static").Handler(
+		http.FileServer(http.Dir(path.Join(config.RootPath, "static"))),
 	)
 	gob.Register(&auth.User{})
 	if err := srv.server.Start(); err != nil {
@@ -129,17 +92,10 @@ func New(config *config.Config) (*Server, error) {
 	return srv, nil
 }
 
-// ServeHTTP loads the user (if available) into the request context and
-// dispatches the request to the appropriate handler.
+// ServeHTTP initializes the request (with context variables) and dispatches it
+// to the appropriate handler.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	session, _ := s.sessions.Get(r, "auth")
-	v, ok := session.Values["user"]
-	if ok {
-		u, ok := v.(*auth.User)
-		if ok {
-			context.Set(r, "user", u)
-		}
-	}
+	s.initRequest(r)
 	s.mux.ServeHTTP(w, r)
 }
 
