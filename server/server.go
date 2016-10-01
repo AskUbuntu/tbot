@@ -6,31 +6,65 @@ import (
 	"github.com/AskUbuntu/tbot/queue"
 	"github.com/AskUbuntu/tbot/scraper"
 	"github.com/AskUbuntu/tbot/twitter"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/hectane/go-asyncserver"
 
-	"html/template"
+	"encoding/gob"
 	"net/http"
-	"path"
 )
 
-// Server acts as a front end to the application.
+// Server acts as a front end to the application, allowing the entire
+// application to be controlled directly from the web.
 type Server struct {
-	server           *server.AsyncServer
-	mux              *mux.Router
-	messages         chan *scraper.Message
-	auth             *auth.Auth
-	queue            *queue.Queue
-	scraper          *scraper.Scraper
-	twitter          *twitter.Twitter
-	queueTemplate    *template.Template
-	settingsTemplate *template.Template
-	usersTemplate    *template.Template
+	server   *server.AsyncServer
+	mux      *mux.Router
+	sessions *sessions.CookieStore
+	messages chan *scraper.Message
+	auth     *auth.Auth
+	queue    *queue.Queue
+	twitter  *twitter.Twitter
+	scraper  *scraper.Scraper
 }
 
+// message is an extremely simple struct that stores session messages for
+// display.
 type message struct {
 	Type string
 	Body string
+}
+
+// getUser is a utility method for retrieving the user for the request.
+func (s *Server) getUser(r *http.Request) *auth.User {
+	v, ok := context.GetOk(r, "user")
+	if ok {
+		return v.(*auth.User)
+	}
+	return nil
+}
+
+// r is a utility function that prevents users from accessing pages for which
+// they do not have the correct permissions. The first argument is the
+// minimum required permission for accessing the page. The second argument is
+// the handler which will be invoked upon confirmation of authorization.
+func (s *Server) r(userType string, fn http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if u := s.getUser(r); u != nil {
+			if userType == auth.StandardUser ||
+				userType == auth.StaffUser && u.Type != auth.StandardUser ||
+				userType == auth.AdminUser && u.Type == auth.AdminUser {
+				fn(w, r)
+			}
+		}
+		session, _ := s.sessions.Get(r, "auth")
+		session.AddFlash(&message{
+			Type: "danger",
+			Body: "you are not authorized to access this page",
+		})
+		http.Redirect(w, r, "/users/login", http.StatusTemporaryRedirect)
+		return
+	}
 }
 
 // New creates a new server bound to the address specified in the config. The
@@ -49,60 +83,64 @@ func New(config *config.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	s, err := scraper.New(config)
+	t, err := twitter.New(config, messagesOut)
 	if err != nil {
 		return nil, err
 	}
-	t, err := twitter.New(config, messagesOut)
+	s, err := scraper.New(config)
 	if err != nil {
 		return nil, err
 	}
 	srv := &Server{
 		server:   server.New(config.Addr),
 		mux:      mux.NewRouter(),
+		sessions: sessions.NewCookieStore([]byte(config.SecretKey)),
 		messages: messagesIn,
 		auth:     a,
 		queue:    q,
-		scraper:  s,
 		twitter:  t,
-		queueTemplate: template.Must(template.ParseFiles(
-			path.Join(config.RootPath, "base.tmpl"),
-			path.Join(config.RootPath, "queue.tmpl"),
-		)),
-		settingsTemplate: template.Must(template.ParseFiles(
-			path.Join(config.RootPath, "base.tmpl"),
-			path.Join(config.RootPath, "settings.tmpl"),
-		)),
-		usersTemplate: template.Must(template.ParseFiles(
-			path.Join(config.RootPath, "base.tmpl"),
-			path.Join(config.RootPath, "users.tmpl"),
-		)),
+		scraper:  s,
 	}
 	srv.server.Handler = srv
 	srv.mux.HandleFunc("/", srv.indexHandler)
-	srv.mux.HandleFunc("/queue", srv.queueHandler)
-	srv.mux.HandleFunc("/settings", srv.settingsHandler)
-	srv.mux.HandleFunc("/users", srv.usersHandler)
-	srv.mux.PathPrefix("/").Handler(http.FileServer(http.Dir(config.RootPath)))
+	srv.mux.HandleFunc("/users", srv.r(auth.AdminUser, srv.usersHandler))
+	srv.mux.HandleFunc("/users/login", srv.usersLoginHandler)
+	srv.mux.HandleFunc("/users/password", srv.r(auth.StandardUser, srv.usersLoginHandler))
+	srv.mux.HandleFunc("/users/logout", srv.r(auth.StandardUser, srv.usersLogoutHandler))
+	srv.mux.HandleFunc("/users/reset", srv.r(auth.AdminUser, srv.usersResetHandler))
+	srv.mux.HandleFunc("/users/create", srv.r(auth.AdminUser, srv.usersCreateHandler))
+	srv.mux.HandleFunc("/users/delete", srv.r(auth.AdminUser, srv.usersDeleteHandler))
+	srv.mux.HandleFunc("/messages", srv.r(auth.StandardUser, srv.messagesHandler))
+	srv.mux.HandleFunc("/messages/queue", srv.r(auth.StandardUser, srv.messagesQueueHandler))
+	srv.mux.HandleFunc("/messages/delete", srv.r(auth.StandardUser, srv.messagesDeleteHandler))
+	srv.mux.HandleFunc("/queue", srv.r(auth.StandardUser, srv.queueHandler))
+	srv.mux.HandleFunc("/queue/delete", srv.r(auth.StandardUser, srv.queueDeleteHandler))
+	srv.mux.HandleFunc("/twitter", srv.r(auth.StandardUser, srv.twitterHandler))
+	srv.mux.HandleFunc("/twitter/custom", srv.r(auth.StandardUser, srv.twitterCustomHandler))
+	srv.mux.HandleFunc("/twitter/delete", srv.r(auth.StandardUser, srv.twitterDeleteHandler))
+	srv.mux.HandleFunc("/settings", srv.r(auth.StaffUser, srv.settingsHandler))
+	srv.mux.PathPrefix("/").Handler(
+		http.FileServer(http.Dir(config.RootPath)),
+	)
+	gob.Register(&auth.User{})
 	if err := srv.server.Start(); err != nil {
 		return nil, err
 	}
 	return srv, nil
 }
 
-// ServeHTTP ensures that a valid username and password are provided before
-// passing the request along to the mux. The administrator's credentials are
-// always accepted.
+// ServeHTTP loads the user (if available) into the request context and
+// dispatches the request to the appropriate handler.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	username, password, _ := r.BasicAuth()
-	if username != "" {
-		if _, err := s.auth.Authenticate(username, password); err == nil {
-			s.mux.ServeHTTP(w, r)
-			return
+	session, _ := s.sessions.Get(r, "auth")
+	v, ok := session.Values["user"]
+	if ok {
+		u, ok := v.(*auth.User)
+		if ok {
+			context.Set(r, "user", u)
 		}
 	}
-	w.Header().Set("WWW-Authenticate", "Basic realm=tbot")
-	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	s.mux.ServeHTTP(w, r)
 }
 
 // Close shuts down the server.

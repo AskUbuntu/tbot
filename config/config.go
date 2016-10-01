@@ -11,6 +11,7 @@ import (
 // storage and retrieval from disk (in JSON format).
 type Config struct {
 	Addr                  string `json:"addr"`           // Address to listen on
+	SecretKey             string `json:"secret_key"`     // Unique string for sessions
 	RootPath              string `json:"root_path"`      // Path to www directory
 	DataPath              string `json:"data_path"`      // Path to data files
 	AdminPassword         string `json:"admin_password"` // Password for admin user
