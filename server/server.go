@@ -65,9 +65,9 @@ func New(config *config.Config) (*Server, error) {
 		scraper:      s,
 	}
 	srv.server.Handler = srv
-	srv.mux.HandleFunc("/", srv.indexHandler)
+	srv.mux.HandleFunc("/", srv.r(auth.NoUser, srv.indexHandler))
 	srv.mux.HandleFunc("/users", srv.r(auth.AdminUser, srv.usersHandler))
-	srv.mux.HandleFunc("/users/login", srv.usersLoginHandler)
+	srv.mux.HandleFunc("/users/login", srv.r(auth.NoUser, srv.usersLoginHandler))
 	srv.mux.HandleFunc("/users/password", srv.r(auth.StandardUser, srv.usersLoginHandler))
 	srv.mux.HandleFunc("/users/logout", srv.r(auth.StandardUser, srv.usersLogoutHandler))
 	srv.mux.HandleFunc("/users/reset", srv.r(auth.AdminUser, srv.usersResetHandler))
@@ -83,9 +83,10 @@ func New(config *config.Config) (*Server, error) {
 	srv.mux.HandleFunc("/twitter/delete", srv.r(auth.StandardUser, srv.twitterDeleteHandler))
 	srv.mux.HandleFunc("/settings", srv.r(auth.StaffUser, srv.settingsHandler))
 	srv.mux.PathPrefix("/static").Handler(
-		http.FileServer(http.Dir(path.Join(config.RootPath, "static"))),
+		http.FileServer(http.Dir(config.RootPath)),
 	)
 	gob.Register(&auth.User{})
+	gob.Register(&message{})
 	if err := srv.server.Start(); err != nil {
 		return nil, err
 	}
@@ -95,7 +96,6 @@ func New(config *config.Config) (*Server, error) {
 // ServeHTTP initializes the request (with context variables) and dispatches it
 // to the appropriate handler.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.initRequest(r)
 	s.mux.ServeHTTP(w, r)
 }
 

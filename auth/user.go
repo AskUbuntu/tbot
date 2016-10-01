@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	NoUser       = ""
 	StandardUser = "standard"
 	StaffUser    = "staff"
 	AdminUser    = "admin"
@@ -53,4 +54,14 @@ func (u *User) setPassword(password string) error {
 	}
 	u.PasswordHash = h
 	return nil
+}
+
+// IsStaff determines if the user is a staff member.
+func (u *User) IsStaff() bool {
+	return u.Type == StaffUser || u.Type == AdminUser
+}
+
+// IsAdmin determines if the user is an admin.
+func (u *User) IsAdmin() bool {
+	return u.Type == AdminUser
 }

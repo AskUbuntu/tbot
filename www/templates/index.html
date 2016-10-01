@@ -1,1 +1,17 @@
-Hello, world!
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Welcome!</h2>
+    <p>
+        This web application was developed for the <a href="http://chat.stackexchange.com/rooms/201/ask-ubuntu-general-room">Ask Ubuntu General Room</a> by <a href="https://github.com/nathan-osman">Nathan Osman</a> based on an idea by one of the moderators. Here is a basic overview of what the application does:
+    </p>
+    <ul>
+        <li>the <a href="http://chat.stackexchange.com/transcript/201">chat transcript</a> is scraped at regular intervals</li>
+        <li>messages are evaluated and awesome ones are selected</li>
+        <li>registered users select interesting ones and queue them</li>
+        <li>every so often, a queued message is tweeted</li>
+    </ul>
+    <p>
+        For the curious, the entire application is available <a href="https://github.com/AskUbuntu/tbot">on GitHub</a>.
+    </p>
+{% endblock %}

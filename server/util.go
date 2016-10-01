@@ -10,14 +10,15 @@ import (
 )
 
 const (
-	sessionName     = "auth"
+	sessionName     = "session"
 	sessionUser     = "user"
+	contextRequest  = "request"
 	contextUser     = "user"
 	contextMessages = "messages"
 )
 
 // initRequest initializes the request with context variables, such as the
-// current user and flashes.
+// current user.
 func (s *Server) initRequest(r *http.Request) {
 	var user *auth.User
 	session, _ := s.sessions.Get(r, sessionName)
@@ -27,7 +28,6 @@ func (s *Server) initRequest(r *http.Request) {
 		}
 	}
 	context.Set(r, contextUser, user)
-	context.Set(r, contextMessages, session.Flashes())
 }
 
 // getUser retrieves the user for the request.
@@ -38,8 +38,15 @@ func (s *Server) getUser(r *http.Request) *auth.User {
 // setUser sets the user for the current session to the provided user.
 func (s *Server) setUser(w http.ResponseWriter, r *http.Request, u *auth.User) {
 	session, _ := s.sessions.Get(r, sessionName)
+	defer session.Save(r, w)
 	session.Values[sessionUser] = u
-	session.Save(r, w)
+}
+
+// deleteUser removes the user from the current session.
+func (s *Server) deleteUser(w http.ResponseWriter, r *http.Request) {
+	session, _ := s.sessions.Get(r, sessionName)
+	defer session.Save(r, w)
+	delete(session.Values, sessionUser)
 }
 
 const (
@@ -48,30 +55,42 @@ const (
 	dangerType  = "danger"
 )
 
+type message struct {
+	Type string
+	Body string
+}
+
 // addMessage registers the provided message for display on the next page the
 // user displays.
 func (s *Server) addMessage(w http.ResponseWriter, r *http.Request, flashType, body string) {
 	session, _ := s.sessions.Get(r, sessionName)
-	session.AddFlash(map[string]string{
-		"type": flashType,
-		"body": body,
+	defer session.Save(r, w)
+	session.AddFlash(&message{
+		Type: flashType,
+		Body: body,
 	})
-	session.Save(r, w)
+}
+
+// getMessages retrieves the messages from the current session.
+func (s *Server) getMessages(w http.ResponseWriter, r *http.Request) interface{} {
+	session, _ := s.sessions.Get(r, sessionName)
+	defer session.Save(r, w)
+	return session.Flashes()
 }
 
 // r prevents users from accessing pages for which they do not have the correct
-// permissions. The first argument is the minimum required permission for
-// accessing the page. The second argument is the handler which will be invoked
-// upon confirmation of authorization.
+// permissions. The first argument is the handler which will be invoked upon
+// confirmation of authorization. The second argument is the minimum required
+// permission for accessing the page.
 func (s *Server) r(userType string, fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if u := s.getUser(r); u != nil {
-			if userType == auth.StandardUser ||
-				userType == auth.StaffUser && u.Type != auth.StandardUser ||
-				userType == auth.AdminUser && u.Type == auth.AdminUser {
-				fn(w, r)
-				return
-			}
+		s.initRequest(r)
+		if u := s.getUser(r); userType == auth.NoUser ||
+			(u != nil && userType == auth.StandardUser ||
+				userType == auth.StaffUser && u.IsStaff() ||
+				userType == auth.AdminUser && u.IsAdmin()) {
+			fn(w, r)
+			return
 		}
 		s.addMessage(w, r, dangerType, "page requires authentication")
 		http.Redirect(w, r, "/users/login", http.StatusTemporaryRedirect)
@@ -86,12 +105,15 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, templateName str
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	ctx[contextUser] = context.Get(r, contextUser)
-	ctx[contextMessages] = context.Get(r, contextMessages)
+	ctx[contextRequest] = r
+	ctx[contextUser] = s.getUser(r)
+	ctx[contextMessages] = s.getMessages(w, r)
 	b, err := t.ExecuteBytes(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
 	w.Write(b)
 }
