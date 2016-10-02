@@ -50,9 +50,12 @@
         </nav>
 
         <div class="container">
-            {% for m in messages %}
-                <div class="alert alert-{{ m.Type }}">
-                    {{ m.Body|capfirst }}
+            {% for a in alerts %}
+                <div class="alert alert-{{ a.Type }}">
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                    {{ a.Body|capfirst }}
                 </div>
             {% endfor %}
             {% block content %}{% endblock %}

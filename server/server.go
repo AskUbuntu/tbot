@@ -86,7 +86,7 @@ func New(config *config.Config) (*Server, error) {
 		http.FileServer(http.Dir(config.RootPath)),
 	)
 	gob.Register(&auth.User{})
-	gob.Register(&message{})
+	gob.Register(&alert{})
 	if err := srv.server.Start(); err != nil {
 		return nil, err
 	}

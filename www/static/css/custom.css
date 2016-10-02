@@ -3,7 +3,11 @@
  * Copyright 2016 - Nathan Osman
  */
 
-.table.table-outline {
+.form-inline {
+    display: inline;
+}
+
+.table-outline {
     border: 1px solid #ddd;
 }
 

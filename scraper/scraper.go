@@ -175,9 +175,9 @@ func (s *Scraper) Messages() []*Message {
 	return s.data.Messages
 }
 
-// Use removes the message from the list in preparation for use. This will also
+// Get removes the message from the list in preparation for use. This will also
 // cause the message to be ignored in future scrapes.
-func (s *Scraper) Use(id int) (*Message, error) {
+func (s *Scraper) Get(id int) (*Message, error) {
 	s.data.Lock()
 	defer s.data.Unlock()
 	var message *Message
@@ -197,13 +197,6 @@ func (s *Scraper) Use(id int) (*Message, error) {
 	s.data.MessagesUsed = append(s.data.MessagesUsed, message.ID)
 	s.data.save()
 	return message, nil
-}
-
-// Blacklist prevents a message from showing up in the scraper.
-func (s *Scraper) Blacklist(id int) {
-	s.data.Lock()
-	defer s.data.Unlock()
-	s.data.MessagesUsed = append(s.data.MessagesUsed, id)
 }
 
 // Settings retrieves the current settings for the scraper.
