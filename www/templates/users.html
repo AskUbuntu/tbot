@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Users</h2>
+    <p>
+        As an administrator, you have the ability to manage users. Existing users are displayed in the table below and new users can be added by using the button. It is also possible to remove users if necessary.
+    </p>
+    <br>
+    <table class="table table-condensed table-striped table-outline">
+        <tr>
+            <th>Username</th>
+            <th>Type</th>
+            <th>Created</th>
+            <th></th>
+        </tr>
+        {% for username, u in users %}
+            <tr>
+                <td><strong>{{ username }}</strong></td>
+                <td><span class="text-muted">{{ u.Type }}</span></td>
+                <td>
+                    <span class="text-muted">
+                        {{ u.Created|date:"January 2, 2006" }}
+                    </span>
+                </td>
+                <td class="text-right">
+                    <form action="/users/reset" method="post" class="form-inline">
+                        <input type="hidden" name="username" value="{{ username }}">
+                        <button type="submit" class="btn btn-sm btn-warning">Reset</button>
+                    </form>
+                    <form action="/users/delete" method="post" class="form-inline">
+                        <input type="hidden" name="username" value="{{ username }}">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="/users/create" class="btn btn-primary">Create</a>
+{% endblock %}

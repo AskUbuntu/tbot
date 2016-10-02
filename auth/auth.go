@@ -64,9 +64,9 @@ func (a *Auth) Users() map[string]*User {
 
 // CreateUser creates a new user. Their randomly-generated password is
 // returned if the process completes without error.
-func (a *Auth) CreateUser(username string) (string, error) {
+func (a *Auth) CreateUser(username, userType string) (string, error) {
 	u := &User{
-		Type:    StandardUser,
+		Type:    userType,
 		Created: time.Now(),
 	}
 	p, err := u.resetPassword()
@@ -103,11 +103,13 @@ func (a *Auth) SetPassword(username, password string) error {
 	defer a.data.Unlock()
 	u, err := a.get(username)
 	if err != nil {
-		if err := u.setPassword(password); err != nil {
-			return err
-		} else {
-			return nil
-		}
+		return err
 	}
-	return errors.New("invalid username supplied")
+	if err = u.setPassword(password); err != nil {
+		return err
+	}
+	if err := a.data.save(); err != nil {
+		return err
+	}
+	return nil
 }

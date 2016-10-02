@@ -53,6 +53,7 @@ func (u *User) setPassword(password string) error {
 		return err
 	}
 	u.PasswordHash = h
+	u.ChangePassword = false
 	return nil
 }
 
