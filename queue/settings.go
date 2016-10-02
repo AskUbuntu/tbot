@@ -24,7 +24,7 @@ func (s *settings) load() error {
 		return err
 	}
 	if !e {
-		s.QueueFrequency = 180 // 3 hours
+		s.QueueFrequency = 480 // 8 hours
 	}
 	return nil
 }
