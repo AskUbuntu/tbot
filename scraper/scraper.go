@@ -47,9 +47,14 @@ func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messag
 			earliestID = id
 		}
 		var (
-			body  = strings.TrimSpace(selection.Find(".content").Text())
-			stars = util.Atoi(selection.Find(".stars .times").Text())
+			content = selection.Find(".content")
+			body    = strings.TrimSpace(content.Text())
+			onebox  = content.Find(".onebox").Length() != 0
+			stars   = util.Atoi(selection.Find(".stars .times").Text())
 		)
+		if onebox {
+			body = content.Find(".ob-image img").AttrOr("src", "")
+		}
 		if body != "" &&
 			(util.ContainsString(body, matchingWords, false) ||
 				stars >= minStars) {
@@ -69,24 +74,26 @@ func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messag
 func (s *Scraper) scrape() error {
 	s.settings.Lock()
 	var (
-		pollURL    = s.settings.PollURL
-		pollRoomID = s.settings.PollRoomID
+		pollURL     = s.settings.PollURL
+		pollRoomID  = s.settings.PollRoomID
+		pollHistory = s.settings.PollHistory
 	)
 	s.settings.Unlock()
-	document, err := goquery.NewDocument(
-		fmt.Sprintf("%s/transcript/%d", pollURL, pollRoomID),
-	)
-	if err != nil {
-		return err
-	}
 	var (
-		path       = document.Find("a[rel=prev]").First().AttrOr("href", "")
+		start = time.Now().Add(time.Duration(pollHistory) * -24 * time.Hour)
+		path  = fmt.Sprintf(
+			"/transcript/%d/%d/%d/%d",
+			pollRoomID,
+			start.Year(),
+			start.Month(),
+			start.Day(),
+		)
 		earliestID = 0
 		messages   = []*Message{}
 	)
 	for path != "" {
 		log.Printf("Scraping '%s'...\n", path)
-		document, err = goquery.NewDocument(
+		document, err := goquery.NewDocument(
 			fmt.Sprintf("%s%s", pollURL, path),
 		)
 		if err != nil {

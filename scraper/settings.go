@@ -10,7 +10,8 @@ import (
 // the room, polling rate, and matching criteria.
 type Settings struct {
 	PollURL       string   `json:"poll_url"`       // Base URL for chat
-	PollRoomID    int      `json:"poll_room_id"`   // Room to
+	PollRoomID    int      `json:"poll_room_id"`   // Room to scrape
+	PollHistory   int      `json:"poll_history"`   // How many days prior to begin scraping
 	PollFrequency int      `json:"poll_frequency"` // Time in minutes between polling
 	MinStars      int      `json:"min_stars"`      // Select messages with these many stars
 	MatchingWords []string `json:"matching_words"` // Select messages with these words
@@ -30,6 +31,7 @@ func (s *settings) load() error {
 	if !e {
 		s.PollURL = "http://chat.stackexchange.com"
 		s.PollRoomID = 201
+		s.PollHistory = 4
 		s.PollFrequency = 60
 		s.MinStars = 4
 		s.MatchingWords = []string{"laser", "bacon"}
