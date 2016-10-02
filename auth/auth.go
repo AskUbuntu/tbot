@@ -12,9 +12,19 @@ import (
 // staff can change settings and only the administrator can perform user
 // actions.
 type Auth struct {
-	data          *data
-	adminUser     *User
-	adminPassword string
+	data      *data
+	adminUser *User
+}
+
+func (a *Auth) get(username string) (*User, error) {
+	if username == "admin" {
+		return a.adminUser, nil
+	}
+	u, ok := a.data.Users[username]
+	if ok {
+		return u, nil
+	}
+	return nil, errors.New("user does not exist")
 }
 
 // New creates a new authenticator for registered users. A special entry is
@@ -28,12 +38,21 @@ func New(config *config.Config) (*Auth, error) {
 		adminUser: &User{
 			Type: AdminUser,
 		},
-		adminPassword: config.AdminPassword,
+	}
+	if err := a.adminUser.setPassword(config.AdminPassword); err != nil {
+		return nil, err
 	}
 	if err := a.data.load(); err != nil {
 		return nil, err
 	}
 	return a, nil
+}
+
+// Get retrieves a specific user.
+func (a *Auth) Get(username string) (*User, error) {
+	a.data.Lock()
+	defer a.data.Unlock()
+	return a.get(username)
 }
 
 // Users returns a map of usernames to their account information.
@@ -67,16 +86,28 @@ func (a *Auth) CreateUser(username string) (string, error) {
 // and password. To make things harder for malicious users, there is no
 // distinguishing between invalid usernames and invalid passwords.
 func (a *Auth) Authenticate(username, password string) (*User, error) {
-	if username == "admin" && password == a.adminPassword {
-		return a.adminUser, nil
-	}
 	a.data.Lock()
 	defer a.data.Unlock()
-	u, ok := a.data.Users[username]
-	if ok {
+	u, err := a.get(username)
+	if err == nil {
 		if u.authenticate(password) {
 			return u, nil
 		}
 	}
 	return nil, errors.New("invalid username or password supplied")
+}
+
+// SetPassword attempts to set a new password for a user.
+func (a *Auth) SetPassword(username, password string) error {
+	a.data.Lock()
+	defer a.data.Unlock()
+	u, err := a.get(username)
+	if err != nil {
+		if err := u.setPassword(password); err != nil {
+			return err
+		} else {
+			return nil
+		}
+	}
+	return errors.New("invalid username supplied")
 }

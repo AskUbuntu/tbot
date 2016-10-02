@@ -10,30 +10,19 @@ import (
 )
 
 const (
-	sessionName    = "session"
-	sessionUser    = "user"
-	contextRequest = "request"
-	contextUser    = "user"
-	contextAlerts  = "alerts"
+	sessionName     = "session"
+	sessionUsername = "username"
+	contextRequest  = "request"
+	contextUsername = "username"
+	contextUser     = "user"
+	contextAlerts   = "alerts"
 )
 
-// getUser retrieves the user for the request.
-func (s *Server) getUser(r *http.Request) *auth.User {
-	return context.Get(r, contextUser).(*auth.User)
-}
-
-// setUser sets the user for the current session to the provided user.
-func (s *Server) setUser(w http.ResponseWriter, r *http.Request, u *auth.User) {
+// setUsername sets the user for the current session to the provided user.
+func (s *Server) setUsername(w http.ResponseWriter, r *http.Request, username string) {
 	session, _ := s.sessions.Get(r, sessionName)
 	defer session.Save(r, w)
-	session.Values[sessionUser] = u
-}
-
-// deleteUser removes the user from the current session.
-func (s *Server) deleteUser(w http.ResponseWriter, r *http.Request) {
-	session, _ := s.sessions.Get(r, sessionName)
-	defer session.Save(r, w)
-	delete(session.Values, sessionUser)
+	session.Values[sessionUsername] = username
 }
 
 const (
@@ -71,13 +60,19 @@ func (s *Server) getAlerts(w http.ResponseWriter, r *http.Request) interface{} {
 // permission for accessing the page.
 func (s *Server) r(userType string, fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var user *auth.User
+		var (
+			username string
+			user     *auth.User
+		)
 		session, _ := s.sessions.Get(r, sessionName)
-		if v, ok := session.Values[sessionUser]; ok {
-			if u, ok := v.(*auth.User); ok {
-				user = u
+		if v, ok := session.Values[sessionUsername]; ok {
+			u, ok := v.(string)
+			if ok {
+				username = u
+				user, _ = s.auth.Get(u)
 			}
 		}
+		context.Set(r, contextUsername, username)
 		context.Set(r, contextUser, user)
 		if userType != auth.NoUser && (user == nil ||
 			userType == auth.StaffUser && !user.IsStaff() ||
@@ -105,7 +100,8 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, templateName str
 		return
 	}
 	ctx[contextRequest] = r
-	ctx[contextUser] = s.getUser(r)
+	ctx[contextUsername] = context.Get(r, contextUsername).(string)
+	ctx[contextUser] = context.Get(r, contextUser).(*auth.User)
 	ctx[contextAlerts] = s.getAlerts(w, r)
 	b, err := t.ExecuteBytes(ctx)
 	if err != nil {

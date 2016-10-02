@@ -68,7 +68,7 @@ func New(config *config.Config) (*Server, error) {
 	srv.mux.HandleFunc("/", srv.r(auth.NoUser, srv.indexHandler))
 	srv.mux.HandleFunc("/users", srv.r(auth.AdminUser, srv.usersHandler))
 	srv.mux.HandleFunc("/users/login", srv.r(auth.NoUser, srv.usersLoginHandler))
-	srv.mux.HandleFunc("/users/password", srv.r(auth.StandardUser, srv.usersLoginHandler))
+	srv.mux.HandleFunc("/users/password", srv.r(auth.StandardUser, srv.usersPasswordHandler))
 	srv.mux.HandleFunc("/users/logout", srv.r(auth.StandardUser, srv.usersLogoutHandler))
 	srv.mux.HandleFunc("/users/reset", srv.r(auth.AdminUser, srv.usersResetHandler))
 	srv.mux.HandleFunc("/users/create", srv.r(auth.AdminUser, srv.usersCreateHandler))
