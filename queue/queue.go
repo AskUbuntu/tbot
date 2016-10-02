@@ -5,23 +5,23 @@ import (
 	"github.com/AskUbuntu/tbot/scraper"
 
 	"path"
+	"reflect"
 	"time"
 )
 
 // Queue manages the list of items to be tweeted.
 type Queue struct {
-	data           *data
-	settings       *settings
-	messageInChan  <-chan *scraper.Message
-	messageOutChan chan<- *scraper.Message
-	closeChan      chan bool
+	data     *data
+	settings *settings
+	messages chan<- *scraper.Message
+	trigger  chan bool
 }
 
 func (q *Queue) sendIfAvailable() bool {
 	q.data.Lock()
 	defer q.data.Unlock()
 	if len(q.data.QueuedMessages) > 0 {
-		q.messageOutChan <- q.data.QueuedMessages[0]
+		q.messages <- q.data.QueuedMessages[0]
 		q.data.LastMessage = time.Now()
 		q.data.QueuedMessages = append(q.data.QueuedMessages[1:])
 		// TODO: error handling
@@ -57,35 +57,27 @@ func (q *Queue) run() {
 			timerChan = timer.C
 		}
 		select {
-		case t := <-q.messageInChan:
-			q.data.Lock()
-			q.data.QueuedMessages = append(q.data.QueuedMessages, t)
-			// TODO: error handling
-			q.data.save()
-			q.data.Unlock()
 		case <-timerChan:
-		case <-q.closeChan:
-			quit = true
+		case quit = <-q.trigger:
 		}
-		if timer != nil && !timer.Stop() {
-			<-timer.C
+		if timer != nil {
+			timer.Stop()
 		}
 		if quit {
 			break
 		}
 	}
-	close(q.closeChan)
+	close(q.trigger)
 }
 
 // New creates a new queue, loading existing data from disk if available. The
 // queue also launches a goroutine to manage tweets.
-func New(config *config.Config, inChan <-chan *scraper.Message, outChan chan<- *scraper.Message) (*Queue, error) {
+func New(config *config.Config, messages chan<- *scraper.Message) (*Queue, error) {
 	q := &Queue{
-		data:           &data{name: path.Join(config.DataPath, "queue_data.json")},
-		settings:       &settings{name: path.Join(config.DataPath, "queue_settings.json")},
-		messageInChan:  inChan,
-		messageOutChan: outChan,
-		closeChan:      make(chan bool),
+		data:     &data{name: path.Join(config.DataPath, "queue_data.json")},
+		settings: &settings{name: path.Join(config.DataPath, "queue_settings.json")},
+		messages: messages,
+		trigger:  make(chan bool),
 	}
 	if err := q.data.load(); err != nil {
 		return nil, err
@@ -104,8 +96,39 @@ func (q *Queue) Messages() []*scraper.Message {
 	return q.data.QueuedMessages
 }
 
+// Add inserts a message into the queue.
+func (q *Queue) Add(m *scraper.Message) error {
+	q.data.Lock()
+	defer q.data.Unlock()
+	q.data.QueuedMessages = append(q.data.QueuedMessages, m)
+	if err := q.data.save(); err != nil {
+		return err
+	}
+	q.trigger <- false
+	return nil
+}
+
+// Settings retrieves the current settings for the queue.
+func (q *Queue) Settings() Settings {
+	q.settings.Lock()
+	defer q.settings.Unlock()
+	return q.settings.Settings
+}
+
+// SetSettings stores the current settings for the queue.
+func (q *Queue) SetSettings(settings Settings) error {
+	q.settings.Lock()
+	defer q.settings.Unlock()
+	if !reflect.DeepEqual(settings, q.settings.Settings) {
+		q.settings.Settings = settings
+		q.trigger <- false
+		return q.settings.save()
+	}
+	return nil
+}
+
 // Close shuts down the queue and waits for the goroutine to exit.
 func (q *Queue) Close() {
-	q.closeChan <- true
-	<-q.closeChan
+	q.trigger <- true
+	<-q.trigger
 }

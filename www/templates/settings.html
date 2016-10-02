@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Settings</h2>
+    <p>
+        Use the form below to adjust the settings for the application.
+    </p>
+    <br>
+    <div class="row">
+        <div class="col-sm-6">
+            <form method="post">
+                <div class="form-group">
+                    <label for="ScraperSettings.PollURL">Poll URL</label>
+                    <input type="text" name="ScraperSettings.PollURL" value="{{ f.ScraperSettings.PollURL }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="ScraperSettings.PollRoomID">Poll Room ID</label>
+                    <input type="number" name="ScraperSettings.PollRoomID" value="{{ f.ScraperSettings.PollRoomID }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="ScraperSettings.PollFrequency">Poll Frequency (minutes)</label>
+                    <input type="number" name="ScraperSettings.PollFrequency" value="{{ f.ScraperSettings.PollFrequency }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="ScraperSettings.MinStars">Minimum Stars</label>
+                    <input type="number" name="ScraperSettings.MinStars" value="{{ f.ScraperSettings.MinStars }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="MatchingWords">Matching Words (comma-separated)</label>
+                    <input type="text" name="MatchingWords" value="{{ f.MatchingWords }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="QueueSettings.QueueFrequency">Queue Frequency (minutes)</label>
+                    <input type="number" name="QueueSettings.QueueFrequency" value="{{ f.QueueSettings.QueueFrequency }}" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"path"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -18,9 +19,9 @@ import (
 // is added to the list of candidates for tweeting. The IDs of messages that
 // are used is kept to prevent duplicates.
 type Scraper struct {
-	data      *data
-	settings  *settings
-	closeChan chan bool
+	data     *data
+	settings *settings
+	trigger  chan bool
 }
 
 func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messages []*Message) {
@@ -140,23 +141,22 @@ func (s *Scraper) run() {
 		)
 		select {
 		case <-timer.C:
-		case <-s.closeChan:
-			quit = true
+		case quit = <-s.trigger:
 		}
 		timer.Stop()
 		if quit {
 			break
 		}
 	}
-	close(s.closeChan)
+	close(s.trigger)
 }
 
 // New creates a new scraper.
 func New(c *config.Config) (*Scraper, error) {
 	s := &Scraper{
-		data:      &data{name: path.Join(c.DataPath, "scraper_data.json")},
-		settings:  &settings{name: path.Join(c.DataPath, "scraper_settings.json")},
-		closeChan: make(chan bool),
+		data:     &data{name: path.Join(c.DataPath, "scraper_data.json")},
+		settings: &settings{name: path.Join(c.DataPath, "scraper_settings.json")},
+		trigger:  make(chan bool),
 	}
 	if err := s.data.load(); err != nil {
 		return nil, err
@@ -207,16 +207,19 @@ func (s *Scraper) Settings() Settings {
 }
 
 // SetSettings stores the current settings for the scraper.
-func (s *Scraper) SetSettings(settings Settings) {
+func (s *Scraper) SetSettings(settings Settings) error {
 	s.settings.Lock()
 	defer s.settings.Unlock()
-	name := s.settings.name
-	s.settings.Settings = settings
-	s.settings.name = name
+	if !reflect.DeepEqual(settings, s.settings.Settings) {
+		s.settings.Settings = settings
+		s.trigger <- false
+		return s.settings.save()
+	}
+	return nil
 }
 
 // Close shuts down the scraper and waits for it to exit.
 func (s *Scraper) Close() {
-	s.closeChan <- true
-	<-s.closeChan
+	s.trigger <- true
+	<-s.trigger
 }

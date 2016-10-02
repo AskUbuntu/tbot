@@ -33,19 +33,16 @@ type Server struct {
 // server also acts as the central coordination point for the other objects,
 // such as the scraper and twitter client.
 func New(config *config.Config) (*Server, error) {
-	var (
-		messagesIn  = make(chan *scraper.Message)
-		messagesOut = make(chan *scraper.Message)
-	)
+	messages := make(chan *scraper.Message)
 	a, err := auth.New(config)
 	if err != nil {
 		return nil, err
 	}
-	q, err := queue.New(config, messagesIn, messagesOut)
+	q, err := queue.New(config, messages)
 	if err != nil {
 		return nil, err
 	}
-	t, err := twitter.New(config, messagesOut)
+	t, err := twitter.New(config, messages)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +55,7 @@ func New(config *config.Config) (*Server, error) {
 		mux:          mux.NewRouter(),
 		sessions:     sessions.NewCookieStore([]byte(config.SecretKey)),
 		templatePath: path.Join(config.RootPath, "templates"),
-		messages:     messagesIn,
+		messages:     messages,
 		auth:         a,
 		queue:        q,
 		twitter:      t,
@@ -103,7 +100,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Close() {
 	s.server.Stop()
 	s.queue.Close()
-	close(s.messages)
 	s.twitter.Close()
 	s.scraper.Close()
 }

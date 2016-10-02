@@ -23,3 +23,13 @@ func ContainsString(str string, terms []string, caseSensitive bool) bool {
 	}
 	return false
 }
+
+// SplitAndTrimString splits a string using the provided separator and then
+// trims spaces from each of the strings.
+func SplitAndTrimString(str, separator string) []string {
+	slice := strings.Split(str, separator)
+	for i, s := range slice {
+		slice[i] = strings.TrimSpace(s)
+	}
+	return slice
+}

@@ -32,5 +32,9 @@
                 </nobr>
             </div>
         </div>
+    {% empty %}
+        <hr>
+        <p class="text-muted text-center">No messages found</p>
+        <hr>
     {% endfor %}
 {% endblock %}

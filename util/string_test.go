@@ -1,6 +1,7 @@
 package util
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -13,5 +14,11 @@ func TestContainsString(t *testing.T) {
 	}
 	if !ContainsString("i like Bacon", []string{"bacon"}, false) {
 		t.Fatal("case-insensitive search should have succeeded")
+	}
+}
+
+func TestSplitAndTrimString(t *testing.T) {
+	if !reflect.DeepEqual(SplitAndTrimString("a,b", ","), []string{"a", "b"}) {
+		t.Fatal("items do not match")
 	}
 }

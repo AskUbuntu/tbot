@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Queue</h2>
+    <p>
+        The queue maintains a list of messages that are ready to be tweeted. At regular intervals, items are removed from the queue and tweeted.
+    </p>
+    {% for m in messages %}
+        <hr>
+        <div class="media">
+            <div class="media-left">
+                <img src="//placehold.it/64x64" class="media-object">
+            </div>
+            <div class="media-body">
+                <p>
+                    {{ m.Body }}
+                </p>
+                <p class="small text-muted">
+                    &mdash; {{ m.Author }}
+                </p>
+            </div>
+        </div>
+    {% empty %}
+        <hr>
+        <p class="text-muted text-center">Queue is empty</p>
+        <hr>
+    {% endfor %}
+{% endblock %}
