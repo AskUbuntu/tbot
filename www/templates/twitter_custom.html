@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Custom Tweet</h2>
+    <p>
+        Sometimes the scraped messages just don't cut it. Or perhaps you need to make an announcement. Use the form below to immediately send a custom tweet out. Remember not to exceed 140 characters.
+    </p>
+    <br>
+    <div class="row">
+        <div class="col-sm-6">
+            <form method="post">
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea name="message" rows="3" placeholder="140 characters..." id="message" class="form-control"></textarea>
+                </div>
+                <p class="text-muted pull-right counter" data-for="#message"></p>
+                <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
