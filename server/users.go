@@ -76,9 +76,34 @@ func (s *Server) usersLogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) usersResetHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		username := r.Form.Get("username")
+		p, err := s.auth.ResetPassword(username)
+		if err != nil {
+			s.addAlert(w, r, dangerType, err.Error())
+		} else {
+			s.addAlert(
+				w, r, infoType,
+				fmt.Sprintf("password reset to '%s'", p),
+			)
+		}
+	}
+	http.Redirect(w, r, "/users", http.StatusFound)
 }
 
 func (s *Server) usersDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		username := r.Form.Get("username")
+		if err := s.auth.Delete(username); err != nil {
+			s.addAlert(w, r, dangerType, err.Error())
+		} else {
+			s.addAlert(
+				w, r, infoType,
+				fmt.Sprintf("user '%s' deleted", username),
+			)
+		}
+	}
+	http.Redirect(w, r, "/users", http.StatusFound)
 }
 
 func (s *Server) usersCreateHandler(w http.ResponseWriter, r *http.Request) {

@@ -105,11 +105,40 @@ func (a *Auth) SetPassword(username, password string) error {
 	if err != nil {
 		return err
 	}
-	if err = u.setPassword(password); err != nil {
+	if err := u.setPassword(password); err != nil {
 		return err
 	}
 	if err := a.data.save(); err != nil {
 		return err
 	}
 	return nil
+}
+
+// ResetPassword attempts to reset a user's password.
+func (a *Auth) ResetPassword(username string) (string, error) {
+	a.data.Lock()
+	defer a.data.Unlock()
+	u, err := a.get(username)
+	if err != nil {
+		return "", err
+	}
+	p, err := u.resetPassword()
+	if err != nil {
+		return "", err
+	}
+	if err := a.data.save(); err != nil {
+		return "", err
+	}
+	return p, nil
+}
+
+// Delete removes the specified user account.
+func (a *Auth) Delete(username string) error {
+	a.data.Lock()
+	defer a.data.Unlock()
+	if _, err := a.get(username); err != nil {
+		return err
+	}
+	delete(a.data.Users, username)
+	return a.data.save()
 }

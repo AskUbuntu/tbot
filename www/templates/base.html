@@ -33,8 +33,8 @@
                         {% if user.Type %}
                             <li><a href="/messages">Messages</a></li>
                             <li><a href="/queue">Queue</a></li>
-                            <li><a href="/twitter">Twitter</a></li>
                             {% if user.IsStaff %}
+                                <li><a href="/twitter">Twitter</a></li>
                                 <li><a href="/settings">Settings</a></li>
                             {% endif %}
                             {% if user.IsAdmin %}
