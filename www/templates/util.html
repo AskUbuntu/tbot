@@ -1,0 +1,19 @@
+{% macro message(m) export %}
+    <div class="media-left">
+        <img src="{{ m.AuthorImage }}" class="media-object">
+    </div>
+    <div class="media-body">
+        <h4 class="media-heading">{{ m.Author }}</h4>
+        <p class="text-muted">
+            {{ m.String }}
+        </p>
+        <p class="text-muted small">
+            <a href="{{ m.URL }}" target="_blank">
+                {{ m.Created|date:"January 2, 2006" }}
+            </a>
+            &nbsp;
+            <span class="glyphicon glyphicon-star small"></span>
+            {{ m.Stars }}
+        </p>
+    </div>
+{% endmacro %}

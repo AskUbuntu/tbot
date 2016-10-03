@@ -5,17 +5,13 @@
     <p>
         The queue maintains a list of messages that are ready to be tweeted. At regular intervals, items are removed from the queue and tweeted.
     </p>
+    {% import "util.html" message %}
     {% for m in messages %}
         <hr>
         <div class="media">
-            <div class="media-left">
-                <img src="//placehold.it/64x64" class="media-object">
-            </div>
-            <div class="media-body">
-                <h4 class="media-heading">{{ m.Author }}</h4>
-                <p class="text-muted">
-                    {{ m.String }}
-                </p>
+            {{ message(m) }}
+            <div class="media-right">
+                <strong>Queued for Tweet</strong>
             </div>
         </div>
     {% empty %}
