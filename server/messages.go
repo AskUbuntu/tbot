@@ -23,8 +23,9 @@ func (s *Server) messagesQueueHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			if err := s.queue.Add(m); err != nil {
 				s.addAlert(w, r, dangerType, err.Error())
+			} else {
+				s.addAlert(w, r, infoType, "message added to queue")
 			}
-			s.addAlert(w, r, infoType, "message added to queue")
 		}
 	}
 	http.Redirect(w, r, "/messages", http.StatusFound)
@@ -36,8 +37,9 @@ func (s *Server) messagesDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		_, err := s.scraper.Get(id)
 		if err != nil {
 			s.addAlert(w, r, dangerType, err.Error())
+		} else {
+			s.addAlert(w, r, infoType, "message removed")
 		}
-		s.addAlert(w, r, infoType, "message removed")
 	}
 	http.Redirect(w, r, "/messages", http.StatusFound)
 }

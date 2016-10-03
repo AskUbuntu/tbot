@@ -96,6 +96,29 @@ func (t *Twitter) Send(status string) error {
 	return err
 }
 
+// Delete the tweet with the given ID.
+func (t *Twitter) Delete(tweetID int64) error {
+	_, _, err := t.client.Statuses.Destroy(tweetID, nil)
+	if err != nil {
+		return err
+	}
+	t.data.Lock()
+	defer t.data.Unlock()
+	for i, tweet := range t.data.Tweets {
+		if tweet.TweetID == tweetID {
+			t.data.Tweets = append(
+				t.data.Tweets[:i],
+				t.data.Tweets[i+1:]...,
+			)
+			if err := t.data.save(); err != nil {
+				return err
+			}
+			break
+		}
+	}
+	return nil
+}
+
 // Waits for the client to shutdown. The channel passed to New *must* be
 // closed first.
 func (t *Twitter) Close() {

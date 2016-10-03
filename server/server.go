@@ -75,9 +75,9 @@ func New(config *config.Config) (*Server, error) {
 	srv.mux.HandleFunc("/messages/delete", srv.r(auth.StandardUser, srv.messagesDeleteHandler))
 	srv.mux.HandleFunc("/queue", srv.r(auth.StandardUser, srv.queueHandler))
 	srv.mux.HandleFunc("/queue/delete", srv.r(auth.StandardUser, srv.queueDeleteHandler))
-	srv.mux.HandleFunc("/twitter", srv.r(auth.StandardUser, srv.twitterHandler))
-	srv.mux.HandleFunc("/twitter/custom", srv.r(auth.StandardUser, srv.twitterCustomHandler))
-	srv.mux.HandleFunc("/twitter/delete", srv.r(auth.StandardUser, srv.twitterDeleteHandler))
+	srv.mux.HandleFunc("/twitter", srv.r(auth.StaffUser, srv.twitterHandler))
+	srv.mux.HandleFunc("/twitter/custom", srv.r(auth.StaffUser, srv.twitterCustomHandler))
+	srv.mux.HandleFunc("/twitter/delete", srv.r(auth.StaffUser, srv.twitterDeleteHandler))
 	srv.mux.HandleFunc("/settings", srv.r(auth.StaffUser, srv.settingsHandler))
 	srv.mux.PathPrefix("/static").Handler(
 		http.FileServer(http.Dir(config.RootPath)),

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Twitter</h2>
+    <p>
+        Tweets that have already been posted are shown below. As a registered user, you have the ability to delete tweets should a problem arise. A button also exists to allow custom messages to be tweeted.
+    </p>
+    {% import "util.html" message %}
+    {% for t in tweets %}
+        <hr>
+        <div class="media">
+            {{ message(t.Message) }}
+            <div class="media-right">
+                <form action="/twitter/delete" method="post" class="form-inline">
+                    <input type="hidden" name="id" value="{{ t.TweetID }}">
+                    <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    {% empty %}
+        <hr>
+        <p class="text-muted text-center">No messages tweeted</p>
+        <hr>
+    {% endfor %}
+{% endblock %}
