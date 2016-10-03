@@ -12,7 +12,9 @@ import (
 )
 
 func (s *Server) indexHandler(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, "index.html", pongo2.Context{})
+	s.render(w, r, "index.html", pongo2.Context{
+		"tweets": s.twitter.Tweets(),
+	})
 }
 
 func (s *Server) settingsHandler(w http.ResponseWriter, r *http.Request) {

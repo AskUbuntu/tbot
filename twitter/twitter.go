@@ -7,11 +7,14 @@ import (
 	"github.com/dghubble/oauth1"
 
 	"log"
+	"path"
+	"time"
 )
 
 // Client sends tweets as soon as they are ready.
 type Twitter struct {
 	client  *twitter.Client
+	data    *data
 	trigger chan bool
 }
 
@@ -21,8 +24,24 @@ func (t *Twitter) run(ch <-chan *scraper.Message) {
 		quit := false
 		select {
 		case m := <-ch:
-			if _, _, err := t.client.Statuses.Update(m.String(), nil); err != nil {
-				log.Printf("twitter error '%s'", err.Error())
+			log.Printf("tweeting '%s'", m.String())
+			tweet, _, err := t.client.Statuses.Update(m.String(), nil)
+			if err != nil {
+				log.Printf("twitter API error '%s'", err.Error())
+			} else {
+				t.data.Lock()
+				if len(t.data.Tweets) > 9 {
+					t.data.Tweets = t.data.Tweets[:9]
+				}
+				t.data.Tweets = append(t.data.Tweets, &Tweet{
+					Message:   m,
+					TweetID:   tweet.ID,
+					TweetTime: time.Now(),
+				})
+				if err := t.data.save(); err != nil {
+					log.Printf("twitter serialization error '%s'", err.Error())
+				}
+				t.data.Unlock()
 			}
 		case quit = <-t.trigger:
 		}
@@ -47,16 +66,34 @@ func New(config *config.Config, ch <-chan *scraper.Message) (*Twitter, error) {
 	httpClient := twitterConfig.Client(oauth1.NoContext, token)
 	t := &Twitter{
 		client:  twitter.NewClient(httpClient),
+		data:    &data{name: path.Join(config.DataPath, "twitter_data.json")},
 		trigger: make(chan bool),
 	}
 	params := &twitter.AccountVerifyParams{
 		SkipStatus: twitter.Bool(true),
 	}
-	if _, _, err := t.client.Accounts.VerifyCredentials(params); err != nil {
+	_, _, err := t.client.Accounts.VerifyCredentials(params)
+	if err != nil {
+		return nil, err
+	}
+	if err := t.data.load(); err != nil {
 		return nil, err
 	}
 	go t.run(ch)
 	return t, nil
+}
+
+// Tweets retrieves recently tweeted messages.
+func (t *Twitter) Tweets() []*Tweet {
+	t.data.Lock()
+	defer t.data.Unlock()
+	return t.data.Tweets
+}
+
+// Send posts a single status update.
+func (t *Twitter) Send(status string) error {
+	_, _, err := t.client.Statuses.Update(status, nil)
+	return err
 }
 
 // Waits for the client to shutdown. The channel passed to New *must* be

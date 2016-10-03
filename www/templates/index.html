@@ -17,6 +17,22 @@
     <hr>
     <h3>Recent Tweets</h3>
     <p>
-        TODO: This section will be replaced by a log of recent tweets.
+        Whenever a message is tweeted by the account, it will be displayed below with the author and a link to the original context of the message. Information about the tweet (including star count) was correct at the time of scraping.
     </p>
+    {% import "util.html" message %}
+    {% for t in tweets %}
+        <hr>
+        <strong>
+            Tweeted on
+            <a href="//twitter.com/statuses/{{ t.TweetID }}" target="_blank">
+                {{ t.TweetTime|date:"January 2, 2006 15:04:05" }}</a>:
+        </strong>
+        <div class="media">
+            {{ message(t.Message) }}
+        </div>
+    {% empty %}
+        <hr>
+        <p class="text-muted text-center">No messages tweeted</p>
+        <hr>
+    {% endfor %}
 {% endblock %}
