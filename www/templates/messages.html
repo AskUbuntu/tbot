@@ -9,23 +9,31 @@
         <hr>
         <div class="media">
             <div class="media-left">
-                <img src="//placehold.it/64x64" class="media-object">
+                <img src="{{ m.AuthorImage }}" class="media-object">
             </div>
             <div class="media-body">
                 <h4 class="media-heading">{{ m.Author }}</h4>
                 <p class="text-muted">
                     {{ m.String }}
                 </p>
+                <p class="text-muted small">
+                    <a href="{{ m.URL }}" target="_blank">
+                        {{ m.Created|date:"January 2, 2006" }}
+                    </a>
+                    &nbsp;
+                    <span class="glyphicon glyphicon-star small"></span>
+                    {{ m.Stars }}
+                </p>
             </div>
             <div class="media-right">
                 <nobr>
                     <form action="/messages/queue" method="post" class="form-inline">
                         <input type="hidden" name="id" value="{{ m.ID }}">
-                        <button type="submit" class="btn btn-sm btn-primary">Queue</button>
+                        <button type="submit" class="btn btn-xs btn-primary">Queue</button>
                     </form>
                     <form action="/messages/delete" method="post" class="form-inline">
                         <input type="hidden" name="id" value="{{ m.ID }}">
-                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        <button type="submit" class="btn btn-xs btn-danger">Delete</button>
                     </form>
                 </nobr>
             </div>

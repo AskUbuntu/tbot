@@ -3,15 +3,18 @@ package scraper
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Message is an individual message found by the scraper.
 type Message struct {
-	ID     int    `json:"id"`
-	URL    string `json:"url"`
-	Body   string `json:"body"`
-	Author string `json:"author"`
-	Stars  int    `json:"stars"`
+	ID          int       `json:"id"`
+	URL         string    `json:"url"`
+	Body        string    `json:"body"`
+	Stars       int       `json:"stars"`
+	Author      string    `json:"author"`
+	AuthorImage string    `json:"author_image"`
+	Created     time.Time `json:"created"`
 }
 
 // String converts the message into a properly formatted string ready for

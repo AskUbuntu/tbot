@@ -35,6 +35,7 @@ func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messag
 		matchingWords = s.settings.MatchingWords
 	)
 	s.settings.Unlock()
+	d, _ := time.Parse("2006-01-02", document.Find("#info .icon").AttrOr("title", ""))
 	document.Find(".message").Each(func(i int, selection *goquery.Selection) {
 		var (
 			link = selection.Find("a[name]")
@@ -58,13 +59,21 @@ func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messag
 		if body != "" &&
 			(util.ContainsString(body, matchingWords, false) ||
 				stars >= minStars) {
-			m := &Message{
-				ID:     id,
-				URL:    fmt.Sprintf("%s%s", pollURL, link.AttrOr("href", "")),
-				Body:   body,
-				Author: selection.Parent().Parent().Find(".signature .username").Text(),
-				Stars:  stars,
-			}
+			var (
+				signature = selection.Parent().Parent().Find(".signature")
+				m         = &Message{
+					ID:     id,
+					URL:    fmt.Sprintf("%s%s", pollURL, link.AttrOr("href", "")),
+					Body:   body,
+					Stars:  stars,
+					Author: signature.Find(".username").Text(),
+					AuthorImage: strings.Replace(
+						signature.Find(".avatar img").AttrOr("src", ""),
+						"?s=16", "?s=48", -1,
+					),
+					Created: d,
+				}
+			)
 			messages = append(messages, m)
 		}
 	})
