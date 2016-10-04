@@ -11,7 +11,10 @@
         <div class="media">
             {{ message(m) }}
             <div class="media-right">
-                <strong>Queued for Tweet</strong>
+                <form action="/queue/delete" method="post" class="form-inline">
+                    <input type="hidden" name="id" value="{{ m.ID }}">
+                    <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                </form>
             </div>
         </div>
     {% empty %}

@@ -11,13 +11,19 @@ import (
 	"time"
 )
 
-var mentionRegexp = regexp.MustCompile("@\\w+[,:]?")
+var (
+	directRegexp  = regexp.MustCompile("^\\s*@[\\w.]+[,:]?")
+	mentionRegexp = regexp.MustCompile("@([\\w.]+)")
+)
 
-func (s *Scraper) cleanBody(body string) string {
+func (s *Scraper) cleanBody(body string, reply bool) string {
 	if strings.HasPrefix(body, "//i.stack.imgur.com") {
 		body = "http:" + body
 	}
-	body = mentionRegexp.ReplaceAllString(body, "")
+	if reply {
+		body = directRegexp.ReplaceAllString(body, "")
+	}
+	body = mentionRegexp.ReplaceAllString(body, "$1")
 	body = strings.TrimSpace(body)
 	return body
 }
@@ -47,6 +53,7 @@ func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messag
 		}
 		var (
 			content = selection.Find(".content")
+			reply   = selection.Find(".reply-info").Length() != 0
 			body    = content.Text()
 			onebox  = content.Find(".onebox").Length() != 0
 			stars   = util.Atoi(selection.Find(".stars .times").Text())
@@ -54,7 +61,7 @@ func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messag
 		if onebox {
 			body = content.Find(".ob-image img").AttrOr("src", "")
 		}
-		body = s.cleanBody(body)
+		body = s.cleanBody(body, reply)
 		if body != "" &&
 			(util.ContainsString(body, matchingWords, false) ||
 				stars >= minStars) {

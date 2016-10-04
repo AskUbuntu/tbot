@@ -33,11 +33,15 @@ func (t *Twitter) run(ch <-chan *scraper.Message) {
 				if len(t.data.Tweets) > 9 {
 					t.data.Tweets = t.data.Tweets[:9]
 				}
-				t.data.Tweets = append(t.data.Tweets, &Tweet{
-					Message:   m,
-					TweetID:   tweet.ID,
-					TweetTime: time.Now(),
-				})
+				t.data.Tweets = append([]*Tweet{
+					&Tweet{
+						Message:   m,
+						TweetID:   tweet.ID,
+						TweetTime: time.Now(),
+					},
+				},
+					t.data.Tweets...,
+				)
 				if err := t.data.save(); err != nil {
 					log.Printf("twitter serialization error '%s'", err.Error())
 				}

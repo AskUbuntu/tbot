@@ -4,6 +4,7 @@ import (
 	"github.com/AskUbuntu/tbot/config"
 	"github.com/AskUbuntu/tbot/scraper"
 
+	"errors"
 	"path"
 	"reflect"
 	"time"
@@ -106,6 +107,22 @@ func (q *Queue) Add(m *scraper.Message) error {
 	}
 	q.trigger <- false
 	return nil
+}
+
+// Delete removes the specified message from the queue.
+func (q *Queue) Delete(id int) error {
+	q.data.Lock()
+	defer q.data.Unlock()
+	for i, m := range q.data.QueuedMessages {
+		if m.ID == id {
+			q.data.QueuedMessages = append(
+				q.data.QueuedMessages[:i],
+				q.data.QueuedMessages[i+1:]...,
+			)
+			return q.data.save()
+		}
+	}
+	return errors.New("invalid message index")
 }
 
 // Settings retrieves the current settings for the queue.

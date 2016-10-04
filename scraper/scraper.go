@@ -82,23 +82,21 @@ func (s *Scraper) Messages() []*Message {
 func (s *Scraper) Get(id int) (*Message, error) {
 	s.data.Lock()
 	defer s.data.Unlock()
-	var message *Message
-	for i := len(s.data.Messages) - 1; i >= 0; i-- {
-		m := s.data.Messages[i]
+	for i, m := range s.data.Messages {
 		if m.ID == id {
-			message = m
+			message := m
 			s.data.Messages = append(
 				s.data.Messages[:i],
 				s.data.Messages[i+1:]...,
 			)
+			s.data.MessagesUsed = append(s.data.MessagesUsed, message.ID)
+			if err := s.data.save(); err != nil {
+				return nil, err
+			}
+			return message, nil
 		}
 	}
-	if message == nil {
-		return nil, errors.New("Invalid message index")
-	}
-	s.data.MessagesUsed = append(s.data.MessagesUsed, message.ID)
-	s.data.save()
-	return message, nil
+	return nil, errors.New("invalid message index")
 }
 
 // Settings retrieves the current settings for the scraper.
