@@ -5,7 +5,9 @@
     <div class="media-body">
         <h4 class="media-heading">{{ m.Author }}</h4>
         <p class="text-muted">
+            {% if m.Onebox %}<a href="{{ m.Body }}" target="_blank">{% endif %}
             {{ m.String }}
+            {% if m.Onebox %}</a>{% endif %}
         </p>
         <p class="text-muted small">
             <a href="{{ m.URL }}" target="_blank">
