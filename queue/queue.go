@@ -144,6 +144,13 @@ func (q *Queue) SetSettings(settings Settings) error {
 	return nil
 }
 
+// LastTweet retrieves the time of the last tweet being sent.
+func (q *Queue) LastTweet() time.Time {
+	q.data.Lock()
+	defer q.data.Unlock()
+	return q.data.LastMessage
+}
+
 // Close shuts down the queue and waits for the goroutine to exit.
 func (q *Queue) Close() {
 	q.trigger <- true
