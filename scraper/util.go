@@ -16,7 +16,14 @@ var (
 	mentionRegexp = regexp.MustCompile("@([\\w.]+)")
 )
 
-func (s *Scraper) cleanBody(body string, reply bool) string {
+func (s *Scraper) cleanBody(selection *goquery.Selection, reply bool) (string, bool) {
+	var (
+		body   = selection.Text()
+		onebox = selection.Find(".onebox").Length() != 0
+	)
+	if onebox {
+		body = selection.Find(".ob-image img").AttrOr("src", "")
+	}
 	if strings.HasPrefix(body, "> ") {
 		body = body[2:]
 	}
@@ -28,7 +35,7 @@ func (s *Scraper) cleanBody(body string, reply bool) string {
 	}
 	body = mentionRegexp.ReplaceAllString(body, "$1")
 	body = strings.TrimSpace(body)
-	return body
+	return body, onebox
 }
 
 func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messages []*Message) {
@@ -55,16 +62,11 @@ func (s *Scraper) scrapePage(document *goquery.Document) (earliestID int, messag
 			earliestID = id
 		}
 		var (
-			content = selection.Find(".content")
-			reply   = selection.Find(".reply-info").Length() != 0
-			body    = content.Text()
-			onebox  = content.Find(".onebox").Length() != 0
-			stars   = util.Atoi(selection.Find(".stars .times").Text())
+			content      = selection.Find(".content")
+			reply        = selection.Find(".reply-info").Length() != 0
+			body, onebox = s.cleanBody(content, reply)
+			stars        = util.Atoi(selection.Find(".stars .times").Text())
 		)
-		if onebox {
-			body = content.Find(".ob-image img").AttrOr("src", "")
-		}
-		body = s.cleanBody(body, reply)
 		if body != "" &&
 			(util.ContainsString(body, matchingWords, false) ||
 				stars >= minStars) {
