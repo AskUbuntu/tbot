@@ -17,6 +17,9 @@ var (
 )
 
 func (s *Scraper) cleanBody(body string, reply bool) string {
+	if strings.HasPrefix(body, "> ") {
+		body = body[2:]
+	}
 	if strings.HasPrefix(body, "//i.stack.imgur.com") {
 		body = "http:" + body
 	}
