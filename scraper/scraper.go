@@ -77,21 +77,23 @@ func (s *Scraper) Messages() []*Message {
 	return s.data.Messages
 }
 
-// Get removes the message from the list in preparation for use. This will also
-// cause the message to be ignored in future scrapes.
-func (s *Scraper) Get(id int) (*Message, error) {
+// Get retrieves a message by its ID. It can also optionally remove the message
+// from the scraper and prevent it from showing up in future scrapes.
+func (s *Scraper) Get(id int, remove bool) (*Message, error) {
 	s.data.Lock()
 	defer s.data.Unlock()
 	for i, m := range s.data.Messages {
 		if m.ID == id {
 			message := m
-			s.data.Messages = append(
-				s.data.Messages[:i],
-				s.data.Messages[i+1:]...,
-			)
-			s.data.MessagesUsed = append(s.data.MessagesUsed, message.ID)
-			if err := s.data.save(); err != nil {
-				return nil, err
+			if remove {
+				s.data.Messages = append(
+					s.data.Messages[:i],
+					s.data.Messages[i+1:]...,
+				)
+				s.data.MessagesUsed = append(s.data.MessagesUsed, message.ID)
+				if err := s.data.save(); err != nil {
+					return nil, err
+				}
 			}
 			return message, nil
 		}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Edit Message</h2>
+    <p>
+        If the scraped message includes words that aren't supposed to be there or it's missing something that is, it is possible to customize the message while still retaining attribution. After customization, the message is added to the queue.
+    </p>
+    <br>
+    <div class="row">
+        <div class="col-sm-6">
+            <form method="post">
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea name="message" rows="3" placeholder="140 characters..." id="message" class="form-control">{{ m.Body }}</textarea>
+                </div>
+                <p class="text-muted pull-right counter" data-for="#message"></p>
+                <button type="submit" class="btn btn-primary">Queue</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

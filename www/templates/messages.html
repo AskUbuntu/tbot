@@ -12,6 +12,7 @@
             {{ message(m) }}
             <div class="media-right">
                 <nobr>
+                    <a href="/messages/{{ m.ID }}/edit" class="btn btn-xs btn-info">Edit</a>
                     <form action="/messages/queue" method="post" class="form-inline">
                         <input type="hidden" name="id" value="{{ m.ID }}">
                         <button type="submit" class="btn btn-xs btn-primary">Queue</button>
