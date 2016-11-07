@@ -19,6 +19,14 @@ func (s *Server) messagesHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) messagesScrapeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		s.scraper.Scrape()
+		s.addAlert(w, r, infoType, "scrape has begun and may take a few seconds")
+	}
+	http.Redirect(w, r, "/messages", http.StatusFound)
+}
+
 func (s *Server) messagesByIdEditHandler(w http.ResponseWriter, r *http.Request) {
 	id := util.Atoi(mux.Vars(r)["id"])
 	m, err := s.scraper.Get(id, false)

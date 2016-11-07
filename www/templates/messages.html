@@ -8,6 +8,11 @@
     <p>
         The next scheduled scrape will be in <strong>{{ next_scrape }} minute(s)</strong>.
     </p>
+    {% if user.IsStaff %}
+        <form action="/messages/scrape" method="post">
+            <button type="submit" class="btn btn-xs btn-primary">Scrape Now</button>
+        </form>
+    {% endif %}
     {% import "util.html" message %}
     {% for m in messages %}
         <hr>

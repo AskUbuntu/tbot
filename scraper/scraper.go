@@ -44,6 +44,9 @@ func (s *Scraper) run() {
 		select {
 		case <-timer.C:
 		case quit = <-s.trigger:
+			if !quit {
+				s.scrape()
+			}
 		}
 		timer.Stop()
 		if quit {
@@ -68,6 +71,11 @@ func New(c *config.Config) (*Scraper, error) {
 	}
 	go s.run()
 	return s, nil
+}
+
+// Scrape manually initiates a scrape of the transcript.
+func (s *Scraper) Scrape() {
+	s.trigger <- false
 }
 
 // Messages retrieves the current list of matching messages.

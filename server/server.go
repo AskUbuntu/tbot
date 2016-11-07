@@ -71,6 +71,7 @@ func New(config *config.Config) (*Server, error) {
 	srv.mux.HandleFunc("/users/delete", srv.r(auth.AdminUser, srv.usersDeleteHandler))
 	srv.mux.HandleFunc("/users/create", srv.r(auth.AdminUser, srv.usersCreateHandler))
 	srv.mux.HandleFunc("/messages", srv.r(auth.StandardUser, srv.messagesHandler))
+	srv.mux.HandleFunc("/messages/scrape", srv.r(auth.StaffUser, srv.messagesScrapeHandler))
 	srv.mux.HandleFunc("/messages/{id:[0-9]+}/edit", srv.r(auth.StaffUser, srv.messagesByIdEditHandler))
 	srv.mux.HandleFunc("/messages/queue", srv.r(auth.StandardUser, srv.messagesQueueHandler))
 	srv.mux.HandleFunc("/messages/delete", srv.r(auth.StandardUser, srv.messagesDeleteHandler))
