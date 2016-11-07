@@ -5,6 +5,9 @@
     <p>
         The scraper runs at regular intervals, parsing messages from the <a href="http://chat.stackexchange.com/transcript/201">chat transcript</a> and evaluating them to determine which ones may be worth sharing. The ones that it has selected are shown below:
     </p>
+    <p>
+        The next scheduled scrape will be in <strong>{{ next_scrape }} minute(s)</strong>.
+    </p>
     {% import "util.html" message %}
     {% for m in messages %}
         <hr>

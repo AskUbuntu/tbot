@@ -101,6 +101,13 @@ func (s *Scraper) Get(id int, remove bool) (*Message, error) {
 	return nil, errors.New("invalid message index")
 }
 
+// LastScrape returns the time of last scrape.
+func (s *Scraper) LastScrape() time.Time {
+	s.data.Lock()
+	defer s.data.Unlock()
+	return s.data.LastScrape
+}
+
 // Settings retrieves the current settings for the scraper.
 func (s *Scraper) Settings() Settings {
 	s.settings.Lock()

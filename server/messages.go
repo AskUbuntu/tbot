@@ -6,12 +6,16 @@ import (
 	"github.com/gorilla/mux"
 
 	"net/http"
+	"time"
 )
 
 func (s *Server) messagesHandler(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, "messages.html", pongo2.Context{
 		"title":    "Messages",
 		"messages": s.scraper.Messages(),
+		"next_scrape": s.scraper.LastScrape().Add(
+			time.Duration(s.scraper.Settings().PollFrequency)*time.Minute,
+		).Sub(time.Now()) / time.Minute,
 	})
 }
 
