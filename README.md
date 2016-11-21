@@ -1,6 +1,6 @@
 ## Ask Ubuntu Chat Twitter Bot
 
-A small web application that watches the Ask Ubuntu general room for messages that meet a certain criteria and allows them to be tweeted at regular intervals. Some of the features that will eventually make their way into this app include:
+A small web application that watches the Ask Ubuntu general room for messages that meet a certain criteria and allows them to be tweeted at regular intervals. Some of the features include:
 
 - Customize criteria for discovering "relevant" messages
 - Hand-select messages for tweeting
