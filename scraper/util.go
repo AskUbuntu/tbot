@@ -132,6 +132,7 @@ func (s *Scraper) scrape() error {
 		path = selection.AttrOr("href", "")
 	}
 	s.data.Lock()
+	defer s.data.Unlock()
 	s.data.LastScrape = time.Now()
 	s.data.EarliestID = earliestID
 	s.data.Messages = messages
@@ -141,6 +142,5 @@ func (s *Scraper) scrape() error {
 	if err := s.data.save(); err != nil {
 		return err
 	}
-	s.data.Unlock()
 	return nil
 }
