@@ -49,7 +49,7 @@ func main() {
 
 	// Wait for SIGINT to be sent
 	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGINT)
+	signal.Notify(ch, syscall.SIGINT, syscal.SIGTERM)
 	<-ch
 
 	log.Print("shutting down...")
