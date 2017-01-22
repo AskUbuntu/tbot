@@ -12,6 +12,10 @@
     width: 48px;
 }
 
+.pre {
+    white-space: pre-wrap;
+}
+
 .table-outline {
     border: 1px solid #ddd;
 }
