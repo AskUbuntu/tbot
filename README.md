@@ -1,5 +1,6 @@
 ## Ask Ubuntu Chat Twitter Bot
 
+[![Build Status](https://travis-ci.org/AskUbuntu/tbot.svg)](https://travis-ci.org/AskUbuntu/tbot)
 [![MIT License](http://img.shields.io/badge/license-MIT-9370d8.svg?style=flat)](http://opensource.org/licenses/MIT)
 
 A small web application that watches the Ask Ubuntu general room for messages that meet a certain criteria and allows them to be tweeted at regular intervals. Some of the features include:
