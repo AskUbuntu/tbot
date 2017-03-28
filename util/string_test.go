@@ -22,3 +22,22 @@ func TestSplitAndTrimString(t *testing.T) {
 		t.Fatal("items do not match")
 	}
 }
+
+type stringTest struct {
+	input  string
+	output string
+}
+
+func TestTruncate(t *testing.T) {
+	values := []stringTest{
+		{"12", "12"},
+		{"123", "123"},
+		{"1234", "12…"},
+	}
+	for _, v := range values {
+		o := Truncate(v.input, 3)
+		if o != v.output {
+			t.Fatalf("%s != %s", o, v.output)
+		}
+	}
+}

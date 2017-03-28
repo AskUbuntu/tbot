@@ -33,3 +33,14 @@ func SplitAndTrimString(str, separator string) []string {
 	}
 	return slice
 }
+
+// Truncate ensures that a message consists of less than 140 characters,
+// appending an ellipsis if necessary.
+func Truncate(message string, maxLen int) string {
+	var v = message
+	if len(v) > maxLen {
+		v = strings.TrimSpace(v[:maxLen-1])
+		v += "…"
+	}
+	return v
+}
