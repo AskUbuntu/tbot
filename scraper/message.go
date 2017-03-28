@@ -41,7 +41,7 @@ func (m *Message) HTML() interface{} {
 	switch m.Onebox {
 	case OneboxImage:
 		return pongo2.AsSafeValue(
-			fmt.Sprintf("<img src=\"%s\">", m.Body),
+			fmt.Sprintf("<img src=\"%s\" class=\"img-responsive\">", m.Body),
 		)
 	default:
 		return fmt.Sprintf("“%s”", util.Truncate(m.Body, 138))
