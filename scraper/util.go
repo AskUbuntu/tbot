@@ -16,13 +16,17 @@ var (
 	mentionRegexp = regexp.MustCompile("@([\\w.]+)")
 )
 
-func (s *Scraper) cleanBody(selection *goquery.Selection, reply bool) (string, bool) {
+func (s *Scraper) cleanBody(selection *goquery.Selection, reply bool) (string, string) {
 	var (
-		body   = selection.Text()
-		onebox = selection.Find(".onebox").Length() != 0
+		body       = strings.TrimSpace(selection.Text())
+		onebox     = ""
+		oneboxElem = selection.Find(".onebox")
 	)
-	if onebox {
-		body = selection.Find(".ob-image img").AttrOr("src", "")
+	if oneboxElem.Length() != 0 {
+		if oneboxElem.HasClass("ob-image") {
+			body = oneboxElem.Find("img").AttrOr("src", "")
+			onebox = OneboxImage
+		}
 	}
 	if strings.HasPrefix(body, "> ") {
 		body = body[2:]

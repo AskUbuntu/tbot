@@ -1,52 +1,96 @@
 package twitter
 
 import (
-	"github.com/AskUbuntu/tbot/config"
-	"github.com/AskUbuntu/tbot/scraper"
-	"github.com/dghubble/go-twitter/twitter"
-	"github.com/dghubble/oauth1"
-
+	"bytes"
+	"encoding/base64"
+	"errors"
+	"io"
 	"log"
+	"net/http"
+	"net/url"
 	"path"
 	"time"
+
+	"github.com/AskUbuntu/tbot/config"
+	"github.com/AskUbuntu/tbot/scraper"
+	"github.com/ChimeraCoder/anaconda"
 )
 
 // Client sends tweets as soon as they are ready.
 type Twitter struct {
-	client  *twitter.Client
+	api     *anaconda.TwitterApi
 	data    *data
 	trigger chan bool
+}
+
+// retrieveImage fetches a remote image and returns its base64 content.
+func retrieveImage(resource string) (string, error) {
+	log.Printf("retrieving '%s'...", resource)
+	req, err := http.NewRequest(http.MethodGet, resource, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", "Ask Ubuntu Twitter Bot")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	var (
+		buffer = bytes.Buffer{}
+		w      = base64.NewEncoder(base64.StdEncoding, &buffer)
+	)
+	if _, err := io.Copy(w, res.Body); err != nil {
+		return "", err
+	}
+	if err := w.Close(); err != nil {
+		return "", err
+	}
+	return buffer.String(), nil
 }
 
 // run receives messages on the specified channel and tweets them.
 func (t *Twitter) run(ch <-chan *scraper.Message) {
 	for {
-		quit := false
+		var quit = false
 		select {
 		case m := <-ch:
-			log.Printf("tweeting '%s'", m.String())
-			tweet, _, err := t.client.Statuses.Update(m.String(), nil)
+			v := url.Values{}
+			if m.Onebox == scraper.OneboxImage {
+				// TODO: do something else if this fails
+				img, err := retrieveImage(m.Body)
+				if err != nil {
+					log.Printf("HTTP error '%s'", err.Error())
+					break
+				}
+				media, err := t.api.UploadMedia(img)
+				if err != nil {
+					log.Printf("twitter API error '%s'", err.Error())
+					break
+				}
+				v.Set("media_ids", media.MediaIDString)
+			}
+			tweet, err := t.api.PostTweet(m.String(), v)
 			if err != nil {
 				log.Printf("twitter API error '%s'", err.Error())
-			} else {
-				t.data.Lock()
-				if len(t.data.Tweets) > 9 {
-					t.data.Tweets = t.data.Tweets[:9]
-				}
-				t.data.Tweets = append([]*Tweet{
-					&Tweet{
-						Message:   m,
-						TweetID:   tweet.ID,
-						TweetTime: time.Now(),
-					},
-				},
-					t.data.Tweets...,
-				)
-				if err := t.data.save(); err != nil {
-					log.Printf("twitter serialization error '%s'", err.Error())
-				}
-				t.data.Unlock()
+				break
 			}
+			t.data.Lock()
+			if len(t.data.Tweets) > 9 {
+				t.data.Tweets = t.data.Tweets[:9]
+			}
+			t.data.Tweets = append([]*Tweet{
+				&Tweet{
+					Message:   m,
+					TweetID:   tweet.Id,
+					TweetTime: time.Now(),
+				},
+			},
+				t.data.Tweets...,
+			)
+			if err := t.data.save(); err != nil {
+				log.Printf("twitter serialization error '%s'", err.Error())
+			}
+			t.data.Unlock()
 		case quit = <-t.trigger:
 		}
 		if quit {
@@ -59,26 +103,20 @@ func (t *Twitter) run(ch <-chan *scraper.Message) {
 // New creates a new Twitter client. The credentials are checked to ensure that
 // they are valid.
 func New(config *config.Config, ch <-chan *scraper.Message) (*Twitter, error) {
-	twitterConfig := oauth1.NewConfig(
-		config.TwitterConsumerKey,
-		config.TwitterConsumerSecret,
-	)
-	token := oauth1.NewToken(
-		config.TwitterAccessToken,
-		config.TwitterAccessSecret,
-	)
-	httpClient := twitterConfig.Client(oauth1.NoContext, token)
+	anaconda.SetConsumerKey(config.TwitterConsumerKey)
+	anaconda.SetConsumerSecret(config.TwitterConsumerSecret)
 	t := &Twitter{
-		client:  twitter.NewClient(httpClient),
+		api: anaconda.NewTwitterApi(
+			config.TwitterAccessToken,
+			config.TwitterAccessSecret,
+		),
 		data:    &data{name: path.Join(config.DataPath, "twitter_data.json")},
 		trigger: make(chan bool),
 	}
-	params := &twitter.AccountVerifyParams{
-		SkipStatus: twitter.Bool(true),
-	}
-	_, _, err := t.client.Accounts.VerifyCredentials(params)
-	if err != nil {
+	if ok, err := t.api.VerifyCredentials(); err != nil {
 		return nil, err
+	} else if !ok {
+		return nil, errors.New("invalid Twitter credentials")
 	}
 	if err := t.data.load(); err != nil {
 		return nil, err
@@ -96,13 +134,13 @@ func (t *Twitter) Tweets() []*Tweet {
 
 // Send posts a single status update.
 func (t *Twitter) Send(status string) error {
-	_, _, err := t.client.Statuses.Update(status, nil)
+	_, err := t.api.PostTweet(status, nil)
 	return err
 }
 
 // Delete the tweet with the given ID.
 func (t *Twitter) Delete(tweetID int64) error {
-	_, _, err := t.client.Statuses.Destroy(tweetID, nil)
+	_, err := t.api.DeleteTweet(tweetID, true)
 	if err != nil {
 		return err
 	}

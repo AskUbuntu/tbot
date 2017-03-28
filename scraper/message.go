@@ -2,8 +2,14 @@ package scraper
 
 import (
 	"fmt"
-	"strings"
 	"time"
+
+	"github.com/AskUbuntu/tbot/util"
+	"github.com/flosch/pongo2"
+)
+
+const (
+	OneboxImage = "image"
 )
 
 // Message is an individual message found by the scraper.
@@ -11,29 +17,33 @@ type Message struct {
 	ID          int       `json:"id"`
 	URL         string    `json:"url"`
 	Body        string    `json:"body"`
-	Onebox      bool      `json:"onebox"`
+	Onebox      string    `json:"onebox"`
 	Stars       int       `json:"stars"`
 	Author      string    `json:"author"`
 	AuthorImage string    `json:"author_image"`
 	Created     time.Time `json:"created"`
 }
 
-// String converts the message into a properly formatted string ready for
-// tweeting. Tweets that exceed the 140-character limit are truncated.
+// String returns the value that should be passed to Twitter to update the
+// status.
 func (m *Message) String() string {
-	var (
-		charsRemaining = 140
-		body           = m.Body
-	)
-	switch {
-	case m.Onebox:
-	case len(body) > charsRemaining:
-		charsRemaining -= 2
-		body = strings.TrimSpace(body[:charsRemaining-1])
-		body += "…"
-		fallthrough
+	switch m.Onebox {
+	case OneboxImage:
+		return ""
 	default:
-		body = fmt.Sprintf("“%s”", body)
+		return fmt.Sprintf("“%s”", util.Truncate(m.Body, 138))
 	}
-	return body
+}
+
+// HTML returns an object that can be rendered in a template, either as a
+// single string or as pre-escaped HTML.
+func (m *Message) HTML() interface{} {
+	switch m.Onebox {
+	case OneboxImage:
+		return pongo2.AsSafeValue(
+			fmt.Sprintf("<img src=\"%s\">", m.Body),
+		)
+	default:
+		return fmt.Sprintf("“%s”", util.Truncate(m.Body, 138))
+	}
 }
